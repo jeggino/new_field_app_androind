@@ -128,7 +128,7 @@ function exportCSV() {
 
 // SYNC TO GOOGLE SHEETS
 function syncToSheets(markerData) {
-    const url = "YOUR_GOOGLE_SCRIPT_URL"; // <-- put your script URL here
+    const url = "https://script.google.com/macros/s/AKfycbxlIZPwLgZNhUpLPrZ0tB77Un_X1MqTgcU5u4vD6bF537UGql75MRyrkIQBeQJsDiNjcA/exec"; // <-- put your script URL here
 
     fetch(url, {
         method: "POST",
