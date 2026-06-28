@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>Field Marker App</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
@@ -18,9 +18,38 @@
             overflow: hidden;
         }
 
+        /* Responsive layout */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            #sidebar {
+                width: 100%;
+                height: 200px;
+                border-right: none;
+                border-bottom: 1px solid #ccc;
+            }
+            #map {
+                flex: 1;
+            }
+            #sidebarToggle {
+                top: 5px;
+                left: 5px;
+            }
+        }
+
+        @media (min-width: 769px) {
+            #sidebar {
+                width: 260px;
+                height: 100vh;
+            }
+            #map {
+                flex: 1;
+            }
+        }
+
         /* Sidebar */
         #sidebar {
-            width: 260px;
             background: #f5f5f5;
             border-right: 1px solid #ccc;
             padding: 10px;
@@ -65,11 +94,6 @@
             font-size: 13px;
         }
 
-        #filters label {
-            display: block;
-            margin-bottom: 4px;
-        }
-
         select {
             width: 100%;
             box-sizing: border-box;
@@ -107,7 +131,7 @@
             border: 1px solid #ccc;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             width: 90%;
-            max-width: 320px;
+            max-width: 340px;
             z-index: 1000;
             display: none;
         }
@@ -139,6 +163,44 @@
         .form-popup button:hover {
             background: #005fcc;
         }
+
+        .form-popup textarea {
+            width: 100%;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        /* Info dialog */
+        #infoDialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 360px;
+            z-index: 1500;
+            display: none;
+            font-size: 14px;
+        }
+
+        #infoDialog h3 {
+            margin-top: 0;
+        }
+
+        #infoDialog button {
+            margin-top: 10px;
+            background: #0078ff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -150,6 +212,7 @@
         <button onclick="toggleSidebar()">Verberg zijbalk</button>
         <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
         <button onclick="exportCSV()">Export CSV</button>
+        <button onclick="showInfo()">Info</button>
 
         <div id="filters">
             <h3>Type (filter)</h3>
@@ -216,11 +279,27 @@
         <!-- Native mobile clock widget -->
         <input type="time" id="time" required><br><br>
 
+        <label>Opmerking:</label><br>
+        <textarea id="comment" rows="3" placeholder="Bijvoorbeeld gedrag, aantal, weer..."></textarea><br><br>
+
         <label>Foto:</label><br>
         <input type="file" id="photo" accept="image/*"><br><br>
 
         <button onclick="saveMarker()">Opslaan</button>
         <button onclick="closeForm()">Annuleren</button>
+    </div>
+
+    <div id="infoDialog">
+        <h3>Hoe werkt deze app?</h3>
+        <p>
+            • Tik op de kaart om een nieuwe marker te plaatsen.<br>
+            • Kies type (Nest of Observatie), soort, datum, tijd en eventueel een opmerking en foto.<br>
+            • Markers worden lokaal opgeslagen op je apparaat (localStorage) en verschijnen opnieuw bij het openen.<br>
+            • Gebruik de filters in de zijbalk om soorten, type of markers met foto te tonen/verbergen.<br>
+            • De knop “Live positie” toont je huidige locatie als een blauwe punt, maar slaat deze niet op.<br>
+            • In de popup kun je een marker wijzigen of verwijderen.
+        </p>
+        <button onclick="hideInfo()">Sluiten</button>
     </div>
 
     <script>
@@ -286,6 +365,14 @@
             }
         }
 
+        function showInfo() {
+            document.getElementById("infoDialog").style.display = "block";
+        }
+
+        function hideInfo() {
+            document.getElementById("infoDialog").style.display = "none";
+        }
+
         function onMapClick(e) {
             if (document.getElementById("form").style.display === "block") return;
             tempLatLng = e.latlng;
@@ -303,10 +390,11 @@
             let species = document.getElementById("species").value;
             let date = document.getElementById("date").value;
             let time = document.getElementById("time").value;
+            let comment = document.getElementById("comment").value;
             let file = document.getElementById("photo").files[0];
 
             if (!species || !date || !time) {
-                alert("Vul alle velden in.");
+                alert("Vul alle verplichte velden in.");
                 return;
             }
 
@@ -327,17 +415,18 @@
                         saved[idx].species = species;
                         saved[idx].date = date;
                         saved[idx].time = time;
+                        saved[idx].comment = comment;
                         if (file) saved[idx].photo = photoData;
                     }
                     localStorage.setItem("markers", JSON.stringify(saved));
 
-                    // update marker on map
                     let mObj = markers.find(m => m.id === editingId);
                     if (mObj) {
                         mObj.data.type = type;
                         mObj.data.species = species;
                         mObj.data.date = date;
                         mObj.data.time = time;
+                        mObj.data.comment = comment;
                         if (file) mObj.data.photo = photoData;
                         updateMarkerLayer(mObj);
                     }
@@ -351,6 +440,7 @@
                         species: species,
                         date: date,
                         time: time,
+                        comment: comment,
                         photo: photoData
                     };
 
@@ -363,6 +453,7 @@
 
                 document.getElementById("date").value = "";
                 document.getElementById("time").value = "";
+                document.getElementById("comment").value = "";
                 document.getElementById("photo").value = "";
                 closeForm();
             };
@@ -379,6 +470,7 @@
                         saved[idx].species = species;
                         saved[idx].date = date;
                         saved[idx].time = time;
+                        saved[idx].comment = comment;
                     }
                     localStorage.setItem("markers", JSON.stringify(saved));
 
@@ -388,6 +480,7 @@
                         mObj.data.species = species;
                         mObj.data.date = date;
                         mObj.data.time = time;
+                        mObj.data.comment = comment;
                         updateMarkerLayer(mObj);
                     }
                 } else {
@@ -399,6 +492,7 @@
                         species: species,
                         date: date,
                         time: time,
+                        comment: comment,
                         photo: null
                     };
 
@@ -419,6 +513,9 @@
                 ${m.species}<br>
                 ${m.date} ${m.time}
             `;
+            if (m.comment && m.comment.trim() !== "") {
+                popupHtml += `<br><i>${m.comment}</i>`;
+            }
             if (m.photo) {
                 popupHtml += `<br><img src="${m.photo}" width="150">`;
             }
@@ -456,11 +553,9 @@
         }
 
         function updateMarkerLayer(mObj) {
-            // remove old layer
             if (map.hasLayer(mObj.layer)) {
                 map.removeLayer(mObj.layer);
             }
-            // re-add with new style/popup
             let d = mObj.data;
             let fillColor = speciesColors[d.species] || "#ffffff";
 
@@ -491,9 +586,10 @@
         function exportCSV() {
             let saved = JSON.parse(localStorage.getItem("markers") || "[]");
 
-            let csv = "lat,lng,type,species,date,time\n";
+            let csv = "lat,lng,type,species,date,time,comment\n";
             saved.forEach(m => {
-                csv += `${m.lat},${m.lng},${m.type},${m.species},${m.date},${m.time}\n`;
+                let safeComment = (m.comment || "").replace(/"/g, '""');
+                csv += `${m.lat},${m.lng},${m.type},${m.species},${m.date},${m.time},"${safeComment}"\n`;
             });
 
             let blob = new Blob([csv], { type: "text/csv" });
@@ -543,6 +639,7 @@
             document.getElementById("species").value = m.species;
             document.getElementById("date").value = m.date;
             document.getElementById("time").value = m.time;
+            document.getElementById("comment").value = m.comment || "";
 
             document.getElementById("form").style.display = "block";
         }
@@ -585,6 +682,7 @@
                     navigator.geolocation.clearWatch(liveWatchID);
                     liveWatchID = null;
                 }
+                // keep liveMarker on map or remove? Here we keep it.
             }
         }
 
@@ -640,5 +738,6 @@
 
 </body>
 </html>
+
 
 
