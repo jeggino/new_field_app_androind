@@ -27,6 +27,7 @@
             left: 10px;
             z-index: 1000;
             display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
@@ -97,6 +98,7 @@
 
     <div id="controls">
         <button onclick="locateMe()">Use GPS</button>
+        <button onclick="toggleLive()">Live Position: OFF</button>
         <button onclick="exportCSV()">Export CSV</button>
     </div>
 
@@ -105,6 +107,12 @@
             Save Marker
             <span class="close-btn" onclick="closeForm()">×</span>
         </h3>
+
+        <label>Type:</label><br>
+        <select id="type">
+            <option value="Observation">Observation</option>
+            <option value="Nest">Nest</option>
+        </select><br><br>
 
         <label>Species:</label><br>
         <input id="species" required><br><br>
@@ -125,13 +133,33 @@
     <script>
         let map;
         let tempLatLng = null;
+        let liveTracking = false;
+        let liveMarker = null;
+        let liveWatchID = null;
 
         window.onload = function () {
-            map = L.map('map').setView([52.3867, 4.9643], 15);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            /* Base layers */
+            let normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19
-            }).addTo(map);
+            });
+
+            let satellite = L.tileLayer(
+                'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                { maxZoom: 19 }
+            );
+
+            map = L.map('map', {
+                center: [52.3867, 4.9643],
+                zoom: 15,
+                layers: [normal]
+            });
+
+            /* Layer switcher */
+            L.control.layers(
+                { "Normal": normal, "Satellite": satellite },
+                {}
+            ).addTo(map);
 
             map.on('click', onMapClick);
 
@@ -149,6 +177,7 @@
         }
 
         function saveMarker() {
+            let type = document.getElementById("type").value;
             let species = document.getElementById("species").value;
             let date = document.getElementById("date").value;
             let time = document.getElementById("time").value;
@@ -169,6 +198,7 @@
                 let markerData = {
                     lat: tempLatLng.lat,
                     lng: tempLatLng.lng,
+                    type: type,
                     species: species,
                     date: date,
                     time: time,
@@ -195,6 +225,7 @@
                 let markerData = {
                     lat: tempLatLng.lat,
                     lng: tempLatLng.lng,
+                    type: type,
                     species: species,
                     date: date,
                     time: time,
@@ -212,7 +243,7 @@
         }
 
         function addMarkerToMap(m) {
-            let popupHtml = `<b>${m.species}</b><br>${m.date} ${m.time}`;
+            let popupHtml = `<b>${m.type}</b><br>${m.species}<br>${m.date} ${m.time}`;
             if (m.photo) {
                 popupHtml += `<br><img src="${m.photo}" width="150">`;
             }
@@ -230,9 +261,9 @@
         function exportCSV() {
             let markers = JSON.parse(localStorage.getItem("markers") || "[]");
 
-            let csv = "lat,lng,species,date,time\n";
+            let csv = "lat,lng,type,species,date,time\n";
             markers.forEach(m => {
-                csv += `${m.lat},${m.lng},${m.species},${m.date},${m.time}\n`;
+                csv += `${m.lat},${m.lng},${m.type},${m.species},${m.date},${m.time}\n`;
             });
 
             let blob = new Blob([csv], { type: "text/csv" });
@@ -245,7 +276,7 @@
         }
 
         function syncToSheets(markerData) {
-            const url = "https://script.google.com/macros/s/AKfycbxlIZPwLgZNhUpLPrZ0tB77Un_X1MqTgcU5u4vD6bF537UGql75MRyrkIQBeQJsDiNjcA/exec";
+            const url = "YOUR_GOOGLE_SCRIPT_URL_HERE";
 
             fetch(url, {
                 method: "POST",
@@ -257,6 +288,7 @@
             });
         }
 
+        /* GPS single locate */
         function locateMe() {
             if (!navigator.geolocation) {
                 alert("Geolocation not supported");
@@ -278,7 +310,41 @@
                 console.log(err);
             });
         }
+
+        /* Live GPS tracking */
+        function toggleLive() {
+            let btn = document.querySelector("#controls button:nth-child(2)");
+
+            if (!liveTracking) {
+                liveTracking = true;
+                btn.textContent = "Live Position: ON";
+
+                liveWatchID = navigator.geolocation.watchPosition(pos => {
+                    let lat = pos.coords.latitude;
+                    let lng = pos.coords.longitude;
+
+                    if (!liveMarker) {
+                        liveMarker = L.circle([lat, lng], {
+                            radius: 5,
+                            color: "red"
+                        }).addTo(map);
+                    } else {
+                        liveMarker.setLatLng([lat, lng]);
+                    }
+
+                    map.setView([lat, lng]);
+                });
+            } else {
+                liveTracking = false;
+                btn.textContent = "Live Position: OFF";
+
+                navigator.geolocation.clearWatch(liveWatchID);
+                liveWatchID = null;
+            }
+        }
     </script>
 
 </body>
+</html>
+
 </html>
