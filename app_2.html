@@ -151,21 +151,54 @@ body {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
+    background: #ffffff;
+    padding: 22px;
+    border-radius: 14px;
+    border: 1px solid #ddd;
     width: 90%;
-    max-width: 340px;
+    max-width: 360px;
     z-index: 1000;
     display: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
 }
 
 .form-popup h3 {
     margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 20px;
     display: flex;
     justify-content: space-between;
 }
+
+.form-popup select,
+.form-popup input,
+.form-popup textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    margin-bottom: 12px;
+    font-size: 15px;
+}
+
+.form-popup button {
+    width: 48%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.form-popup button:first-of-type {
+    background: #27ae60;
+    color: white;
+}
+
+.form-popup button:last-of-type {
+    background: #ccc;
+}
+
 </style>
 </head>
 
@@ -175,7 +208,7 @@ body {
      STARTUP SCREEN HTML
 ============================================================ -->
 <div id="startupScreen">
-    <h1>Welkom Luigi</h1>
+    <h1>Welkom</h1>
     <p>Kies hoe je wilt beginnen</p>
     <button onclick="startNewProject()">Nieuw project</button>
     <button onclick="openExistingProject()">Bestaand project openen</button>
@@ -342,10 +375,16 @@ async function startNewProject() {
         }]
     });
 
+    // Create empty project
     localStorage.setItem("markers", "[]");
     await writeGeoJSON();
+
+    // Load the new file into the map
+    await readGeoJSONIntoLocalStorage();
+
     startApp();
 }
+
 
 async function openExistingProject() {
     const [handle] = await window.showOpenFilePicker({
@@ -405,7 +444,13 @@ async function readGeoJSONIntoLocalStorage() {
 ============================================================ */
 function initMap() {
     let normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-    map = L.map('map', { center: [52.3867, 4.9643], zoom: 15, layers: [normal] });
+    map = L.map('map', {
+        center: [52.3867, 4.9643],
+        zoom: 15,
+        zoomControl: false,   // disable zoom buttons
+        layers: [normal]
+    });
+    ;
 }
 
 /* ============================================================
@@ -420,7 +465,7 @@ function saveMarker() {
     let file = document.getElementById("photo").files[0];
 
     let reader = new FileReader();
-
+    tempLatLng = map.getCenter().wrap();
     reader.onload = async function(e) {
         let photoData = e.target.result || null;
         let saved = JSON.parse(localStorage.getItem("markers") || "[]");
@@ -436,8 +481,8 @@ function saveMarker() {
         } else {
             saved.push({
                 id: Date.now(),
-                lat: tempLatLng.lat,
-                lng: tempLatLng.lng,
+                lat: Number(tempLatLng.lat.toFixed(8)),
+                lng: Number(tempLatLng.lng.toFixed(8)),
                 type, species, date, time, comment,
                 photo: photoData
             });
@@ -671,13 +716,17 @@ function applyFilters() {
 ============================================================ */
 function toggleSidebar() {
     const sidebar = document.getElementById("sidebar");
+    const openBtn = document.getElementById("openSidebarBtn");
 
     if (sidebar.style.display === "none") {
         sidebar.style.display = "flex";
+        openBtn.style.display = "none";
     } else {
         sidebar.style.display = "none";
+        openBtn.style.display = "block";
     }
 }
+
 
 /* ============================================================
    LIVE GPS TRACKING
