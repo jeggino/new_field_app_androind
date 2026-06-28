@@ -30,6 +30,10 @@
             gap: 10px;
         }
 
+        #sidebar.hidden {
+            display: none;
+        }
+
         #sidebar h2 {
             margin: 0 0 10px 0;
             font-size: 18px;
@@ -66,9 +70,29 @@
             margin-bottom: 4px;
         }
 
+        select {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         /* Map */
         #map {
             flex: 1;
+        }
+
+        /* Toggle sidebar button when hidden */
+        #sidebarToggle {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 2000;
+            background: #0078ff;
+            color: white;
+            border: none;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
         }
 
         /* Popup Form */
@@ -123,33 +147,39 @@
     <div id="sidebar">
         <h2>Veldkaart</h2>
 
-        <button onclick="locateMe()">Gebruik GPS</button>
+        <button onclick="toggleSidebar()">Verberg zijbalk</button>
         <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
         <button onclick="exportCSV()">Export CSV</button>
 
         <div id="filters">
-            <h3>Type</h3>
-            <label><input type="checkbox" id="filterNest" checked> Nest</label>
-            <label><input type="checkbox" id="filterObs" checked> Observatie</label>
+            <h3>Type (filter)</h3>
+            <select id="filterType" multiple>
+                <option value="Nest" selected>Nest</option>
+                <option value="Observatie" selected>Observatie</option>
+            </select>
+
+            <h3>Soorten (filter)</h3>
+            <select id="filterSpeciesMulti" multiple>
+                <option value="Wilde Eend" selected>Wilde Eend</option>
+                <option value="Meerkoet" selected>Meerkoet</option>
+                <option value="Fuut" selected>Fuut</option>
+                <option value="Blauwe Reiger" selected>Blauwe Reiger</option>
+                <option value="Merel" selected>Merel</option>
+                <option value="Huismus" selected>Huismus</option>
+                <option value="Zwarte Kraai" selected>Zwarte Kraai</option>
+                <option value="Ekster" selected>Ekster</option>
+                <option value="Canadese Gans" selected>Canadese Gans</option>
+                <option value="Knobbelzwaan" selected>Knobbelzwaan</option>
+            </select>
 
             <h3>Foto</h3>
             <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
 
-            <h3>Soorten</h3>
-            <label><input type="checkbox" class="filterSpecies" value="Wilde Eend" checked> Wilde Eend</label>
-            <label><input type="checkbox" class="filterSpecies" value="Meerkoet" checked> Meerkoet</label>
-            <label><input type="checkbox" class="filterSpecies" value="Fuut" checked> Fuut</label>
-            <label><input type="checkbox" class="filterSpecies" value="Blauwe Reiger" checked> Blauwe Reiger</label>
-            <label><input type="checkbox" class="filterSpecies" value="Merel" checked> Merel</label>
-            <label><input type="checkbox" class="filterSpecies" value="Huismus" checked> Huismus</label>
-            <label><input type="checkbox" class="filterSpecies" value="Zwarte Kraai" checked> Zwarte Kraai</label>
-            <label><input type="checkbox" class="filterSpecies" value="Ekster" checked> Ekster</label>
-            <label><input type="checkbox" class="filterSpecies" value="Canadese Gans" checked> Canadese Gans</label>
-            <label><input type="checkbox" class="filterSpecies" value="Knobbelzwaan" checked> Knobbelzwaan</label>
-
             <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
         </div>
     </div>
+
+    <button id="sidebarToggle" style="display:none;" onclick="toggleSidebar()">Toon zijbalk</button>
 
     <div id="map"></div>
 
@@ -183,6 +213,7 @@
         <input type="date" id="date" required><br><br>
 
         <label>Tijd:</label><br>
+        <!-- Native mobile clock widget -->
         <input type="time" id="time" required><br><br>
 
         <label>Foto:</label><br>
@@ -200,6 +231,7 @@
         let liveWatchID = null;
 
         let markers = []; // { id, data, layer }
+        let editingId = null;
 
         const speciesColors = {
             "Wilde Eend": "#2ecc71",
@@ -241,14 +273,29 @@
             setupFilterListeners();
         };
 
+        function toggleSidebar() {
+            const sidebar = document.getElementById("sidebar");
+            const toggleBtn = document.getElementById("sidebarToggle");
+
+            if (sidebar.classList.contains("hidden")) {
+                sidebar.classList.remove("hidden");
+                toggleBtn.style.display = "none";
+            } else {
+                sidebar.classList.add("hidden");
+                toggleBtn.style.display = "block";
+            }
+        }
+
         function onMapClick(e) {
             if (document.getElementById("form").style.display === "block") return;
             tempLatLng = e.latlng;
+            editingId = null; // new marker
             document.getElementById("form").style.display = "block";
         }
 
         function closeForm() {
             document.getElementById("form").style.display = "none";
+            editingId = null;
         }
 
         function saveMarker() {
@@ -263,30 +310,56 @@
                 return;
             }
 
-            if (!tempLatLng) return;
+            if (!tempLatLng && !editingId) return;
 
             let reader = new FileReader();
 
             reader.onload = function (e) {
                 let photoData = e.target.result || null;
 
-                let markerData = {
-                    id: Date.now(),
-                    lat: tempLatLng.lat,
-                    lng: tempLatLng.lng,
-                    type: type,
-                    species: species,
-                    date: date,
-                    time: time,
-                    photo: photoData
-                };
-
                 let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-                saved.push(markerData);
-                localStorage.setItem("markers", JSON.stringify(saved));
 
-                addMarkerToMap(markerData);
-                syncToSheets(markerData);
+                if (editingId) {
+                    // update existing
+                    let idx = saved.findIndex(m => m.id === editingId);
+                    if (idx !== -1) {
+                        saved[idx].type = type;
+                        saved[idx].species = species;
+                        saved[idx].date = date;
+                        saved[idx].time = time;
+                        if (file) saved[idx].photo = photoData;
+                    }
+                    localStorage.setItem("markers", JSON.stringify(saved));
+
+                    // update marker on map
+                    let mObj = markers.find(m => m.id === editingId);
+                    if (mObj) {
+                        mObj.data.type = type;
+                        mObj.data.species = species;
+                        mObj.data.date = date;
+                        mObj.data.time = time;
+                        if (file) mObj.data.photo = photoData;
+                        updateMarkerLayer(mObj);
+                    }
+                } else {
+                    // new marker
+                    let markerData = {
+                        id: Date.now(),
+                        lat: tempLatLng.lat,
+                        lng: tempLatLng.lng,
+                        type: type,
+                        species: species,
+                        date: date,
+                        time: time,
+                        photo: photoData
+                    };
+
+                    saved.push(markerData);
+                    localStorage.setItem("markers", JSON.stringify(saved));
+
+                    addMarkerToMap(markerData);
+                    syncToSheets(markerData);
+                }
 
                 document.getElementById("date").value = "";
                 document.getElementById("time").value = "";
@@ -297,39 +370,50 @@
             if (file) {
                 reader.readAsDataURL(file);
             } else {
-                let markerData = {
-                    id: Date.now(),
-                    lat: tempLatLng.lat,
-                    lng: tempLatLng.lng,
-                    type: type,
-                    species: species,
-                    date: date,
-                    time: time,
-                    photo: null
-                };
-
                 let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-                saved.push(markerData);
-                localStorage.setItem("markers", JSON.stringify(saved));
 
-                addMarkerToMap(markerData);
-                syncToSheets(markerData);
+                if (editingId) {
+                    let idx = saved.findIndex(m => m.id === editingId);
+                    if (idx !== -1) {
+                        saved[idx].type = type;
+                        saved[idx].species = species;
+                        saved[idx].date = date;
+                        saved[idx].time = time;
+                    }
+                    localStorage.setItem("markers", JSON.stringify(saved));
+
+                    let mObj = markers.find(m => m.id === editingId);
+                    if (mObj) {
+                        mObj.data.type = type;
+                        mObj.data.species = species;
+                        mObj.data.date = date;
+                        mObj.data.time = time;
+                        updateMarkerLayer(mObj);
+                    }
+                } else {
+                    let markerData = {
+                        id: Date.now(),
+                        lat: tempLatLng.lat,
+                        lng: tempLatLng.lng,
+                        type: type,
+                        species: species,
+                        date: date,
+                        time: time,
+                        photo: null
+                    };
+
+                    saved.push(markerData);
+                    localStorage.setItem("markers", JSON.stringify(saved));
+
+                    addMarkerToMap(markerData);
+                    syncToSheets(markerData);
+                }
+
                 closeForm();
             }
         }
 
-        function addMarkerToMap(m) {
-            let borderColor = m.type === "Nest" ? "#e74c3c" : "#3498db";
-            let fillColor = speciesColors[m.species] || "#ffffff";
-
-            let layer = L.circleMarker([m.lat, m.lng], {
-                radius: 8,
-                color: borderColor,
-                weight: 3,
-                fillColor: fillColor,
-                fillOpacity: 0.9
-            });
-
+        function makePopupHtml(m) {
             let popupHtml = `
                 <b>${m.type}</b><br>
                 ${m.species}<br>
@@ -338,12 +422,64 @@
             if (m.photo) {
                 popupHtml += `<br><img src="${m.photo}" width="150">`;
             }
-            popupHtml += `<br><br><button onclick="deleteMarker(${m.id})">Verwijder marker</button>`;
+            popupHtml += `
+                <br><br>
+                <button onclick="editMarker(${m.id})">Wijzig</button>
+                <button onclick="deleteMarker(${m.id})">Verwijder</button>
+            `;
+            return popupHtml;
+        }
 
-            layer.bindPopup(popupHtml);
+        function addMarkerToMap(m) {
+            let fillColor = speciesColors[m.species] || "#ffffff";
+
+            let layer;
+            if (m.type === "Nest") {
+                // circle for nest
+                layer = L.circleMarker([m.lat, m.lng], {
+                    radius: 8,
+                    color: "#e74c3c",
+                    weight: 3,
+                    fillColor: fillColor,
+                    fillOpacity: 0.9
+                });
+            } else {
+                // pin marker for observation
+                layer = L.marker([m.lat, m.lng]);
+            }
+
+            layer.bindPopup(makePopupHtml(m));
             layer.addTo(map);
 
             markers.push({ id: m.id, data: m, layer: layer });
+            applyFilters();
+        }
+
+        function updateMarkerLayer(mObj) {
+            // remove old layer
+            if (map.hasLayer(mObj.layer)) {
+                map.removeLayer(mObj.layer);
+            }
+            // re-add with new style/popup
+            let d = mObj.data;
+            let fillColor = speciesColors[d.species] || "#ffffff";
+
+            let layer;
+            if (d.type === "Nest") {
+                layer = L.circleMarker([d.lat, d.lng], {
+                    radius: 8,
+                    color: "#e74c3c",
+                    weight: 3,
+                    fillColor: fillColor,
+                    fillOpacity: 0.9
+                });
+            } else {
+                layer = L.marker([d.lat, d.lng]);
+            }
+
+            layer.bindPopup(makePopupHtml(d));
+            layer.addTo(map);
+            mObj.layer = layer;
             applyFilters();
         }
 
@@ -395,26 +531,20 @@
             }
         }
 
-        function locateMe() {
-            if (!navigator.geolocation) {
-                alert("Geolocatie niet ondersteund.");
-                return;
-            }
+        function editMarker(id) {
+            let saved = JSON.parse(localStorage.getItem("markers") || "[]");
+            let m = saved.find(x => x.id === id);
+            if (!m) return;
 
-            navigator.geolocation.getCurrentPosition(pos => {
-                let lat = pos.coords.latitude;
-                let lng = pos.coords.longitude;
+            editingId = id;
+            tempLatLng = { lat: m.lat, lng: m.lng };
 
-                map.setView([lat, lng], 18);
+            document.getElementById("type").value = m.type;
+            document.getElementById("species").value = m.species;
+            document.getElementById("date").value = m.date;
+            document.getElementById("time").value = m.time;
 
-                L.circle([lat, lng], {
-                    radius: 5,
-                    color: "blue"
-                }).addTo(map);
-            }, err => {
-                alert("Kon locatie niet ophalen.");
-                console.log(err);
-            });
+            document.getElementById("form").style.display = "block";
         }
 
         function toggleLive() {
@@ -459,40 +589,44 @@
         }
 
         function setupFilterListeners() {
-            document.getElementById("filterNest").addEventListener("change", applyFilters);
-            document.getElementById("filterObs").addEventListener("change", applyFilters);
+            document.getElementById("filterType").addEventListener("change", applyFilters);
+            document.getElementById("filterSpeciesMulti").addEventListener("change", applyFilters);
             document.getElementById("filterPhoto").addEventListener("change", applyFilters);
-
-            document.querySelectorAll(".filterSpecies").forEach(cb => {
-                cb.addEventListener("change", applyFilters);
-            });
         }
 
         function resetFilters() {
-            document.getElementById("filterNest").checked = true;
-            document.getElementById("filterObs").checked = true;
+            const typeSel = document.getElementById("filterType");
+            for (let opt of typeSel.options) opt.selected = true;
+
+            const speciesSel = document.getElementById("filterSpeciesMulti");
+            for (let opt of speciesSel.options) opt.selected = true;
+
             document.getElementById("filterPhoto").checked = false;
-            document.querySelectorAll(".filterSpecies").forEach(cb => cb.checked = true);
             applyFilters();
         }
 
+        function getSelectedValues(selectEl) {
+            let vals = [];
+            for (let opt of selectEl.options) {
+                if (opt.selected) vals.push(opt.value);
+            }
+            return vals;
+        }
+
         function applyFilters() {
-            let showNest = document.getElementById("filterNest").checked;
-            let showObs = document.getElementById("filterObs").checked;
+            let typeSel = document.getElementById("filterType");
+            let speciesSel = document.getElementById("filterSpeciesMulti");
             let onlyPhoto = document.getElementById("filterPhoto").checked;
 
-            let speciesAllowed = {};
-            document.querySelectorAll(".filterSpecies").forEach(cb => {
-                speciesAllowed[cb.value] = cb.checked;
-            });
+            let typesAllowed = getSelectedValues(typeSel);
+            let speciesAllowed = getSelectedValues(speciesSel);
 
             markers.forEach(m => {
                 let d = m.data;
                 let visible = true;
 
-                if (d.type === "Nest" && !showNest) visible = false;
-                if (d.type === "Observatie" && !showObs) visible = false;
-                if (!speciesAllowed[d.species]) visible = false;
+                if (!typesAllowed.includes(d.type)) visible = false;
+                if (!speciesAllowed.includes(d.species)) visible = false;
                 if (onlyPhoto && !d.photo) visible = false;
 
                 if (visible) {
@@ -506,4 +640,5 @@
 
 </body>
 </html>
+
 
