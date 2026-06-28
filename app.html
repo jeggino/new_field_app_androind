@@ -25,7 +25,7 @@
             }
             #sidebar {
                 width: 100%;
-                height: 200px;
+                height: 220px;
                 border-right: none;
                 border-bottom: 1px solid #ccc;
             }
@@ -57,6 +57,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            position: relative;
         }
 
         #sidebar.hidden {
@@ -66,11 +67,6 @@
         #sidebar h2 {
             margin: 0 0 10px 0;
             font-size: 18px;
-        }
-
-        #sidebar h3 {
-            margin: 10px 0 5px 0;
-            font-size: 15px;
         }
 
         #sidebar button {
@@ -88,20 +84,70 @@
             background: #005fcc;
         }
 
+        /* Green hide sidebar button with separator */
+        #hideSidebarBtn {
+            background: #27ae60;
+            margin-top: 10px;
+            border-top: 1px solid #ccc;
+            padding-top: 12px;
+        }
+
+        /* Filters collapsible */
+        .filter-section {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-top: 8px;
+            background: #ffffff;
+        }
+
+        .filter-header {
+            padding: 6px 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .filter-header span {
+            font-weight: bold;
+        }
+
+        .filter-content {
+            padding: 6px 8px;
+            display: none;
+            font-size: 13px;
+        }
+
+        .filter-content select,
+        .filter-content label {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        select[multiple] {
+            height: 80px;
+        }
+
         #filters {
             flex: 1;
             overflow-y: auto;
             font-size: 13px;
         }
 
-        select {
-            width: 100%;
-            box-sizing: border-box;
+        /* Info button at bottom */
+        #infoBtn {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: block;
         }
 
         /* Map */
         #map {
             flex: 1;
+            position: relative;
         }
 
         /* Toggle sidebar button when hidden */
@@ -117,6 +163,80 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 13px;
+        }
+
+        /* Floating add observation button */
+        #addObsBtn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #0078ff;
+            color: white;
+            border: none;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1200;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        #addObsBtn.cross-mode {
+            background: #27ae60;
+        }
+
+        /* Crosshair (GIS style) */
+        #crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: -20px;
+            margin-top: -20px;
+            z-index: 1100;
+            pointer-events: none;
+            display: none;
+        }
+
+        #crosshair::before,
+        #crosshair::after {
+            content: "";
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+        }
+
+        /* vertical line */
+        #crosshair::before {
+            width: 2px;
+            height: 40px;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+        }
+
+        /* horizontal line */
+        #crosshair::after {
+            height: 2px;
+            width: 40px;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+        }
+
+        #crosshairCircle {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.7);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         /* Popup Form */
@@ -209,42 +329,75 @@
     <div id="sidebar">
         <h2>Veldkaart</h2>
 
-        <button onclick="toggleSidebar()">Verberg zijbalk</button>
+        <button id="hideSidebarBtn" onclick="toggleSidebar()">Verberg zijbalk</button>
         <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
         <button onclick="exportCSV()">Export CSV</button>
-        <button onclick="showInfo()">Info</button>
 
         <div id="filters">
-            <h3>Type (filter)</h3>
-            <select id="filterType" multiple>
-                <option value="Nest" selected>Nest</option>
-                <option value="Observatie" selected>Observatie</option>
-            </select>
+            <!-- Type filter -->
+            <div class="filter-section">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Type</span>
+                    <span>▼</span>
+                </div>
+                <div class="filter-content">
+                    <select id="filterType" multiple>
+                        <option value="Nest" selected>Nest</option>
+                        <option value="Observatie" selected>Observatie</option>
+                    </select>
+                </div>
+            </div>
 
-            <h3>Soorten (filter)</h3>
-            <select id="filterSpeciesMulti" multiple>
-                <option value="Wilde Eend" selected>Wilde Eend</option>
-                <option value="Meerkoet" selected>Meerkoet</option>
-                <option value="Fuut" selected>Fuut</option>
-                <option value="Blauwe Reiger" selected>Blauwe Reiger</option>
-                <option value="Merel" selected>Merel</option>
-                <option value="Huismus" selected>Huismus</option>
-                <option value="Zwarte Kraai" selected>Zwarte Kraai</option>
-                <option value="Ekster" selected>Ekster</option>
-                <option value="Canadese Gans" selected>Canadese Gans</option>
-                <option value="Knobbelzwaan" selected>Knobbelzwaan</option>
-            </select>
+            <!-- Species filter -->
+            <div class="filter-section">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Soorten</span>
+                    <span>▼</span>
+                </div>
+                <div class="filter-content">
+                    <select id="filterSpeciesMulti" multiple>
+                        <option value="Wilde Eend" selected>Wilde Eend</option>
+                        <option value="Meerkoet" selected>Meerkoet</option>
+                        <option value="Fuut" selected>Fuut</option>
+                        <option value="Blauwe Reiger" selected>Blauwe Reiger</option>
+                        <option value="Merel" selected>Merel</option>
+                        <option value="Huismus" selected>Huismus</option>
+                        <option value="Zwarte Kraai" selected>Zwarte Kraai</option>
+                        <option value="Ekster" selected>Ekster</option>
+                        <option value="Canadese Gans" selected>Canadese Gans</option>
+                        <option value="Knobbelzwaan" selected>Knobbelzwaan</option>
+                    </select>
+                </div>
+            </div>
 
-            <h3>Foto</h3>
-            <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
+            <!-- Photo filter -->
+            <div class="filter-section">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Foto</span>
+                    <span>▼</span>
+                </div>
+                <div class="filter-content">
+                    <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
+                </div>
+            </div>
 
             <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
         </div>
+
+        <button id="infoBtn" onclick="showInfo()">ℹ️ Info</button>
     </div>
 
     <button id="sidebarToggle" style="display:none;" onclick="toggleSidebar()">Toon zijbalk</button>
 
     <div id="map"></div>
+
+    <!-- Crosshair -->
+    <div id="crosshair">
+        <div id="crosshairCircle"></div>
+    </div>
+
+    <!-- Floating add observation button -->
+    <button id="addObsBtn" onclick="toggleAddMode()">+</button>
 
     <div class="form-popup" id="form">
         <h3>
@@ -292,12 +445,15 @@
     <div id="infoDialog">
         <h3>Hoe werkt deze app?</h3>
         <p>
-            • Tik op de kaart om een nieuwe marker te plaatsen.<br>
-            • Kies type (Nest of Observatie), soort, datum, tijd en eventueel een opmerking en foto.<br>
-            • Markers worden lokaal opgeslagen op je apparaat (localStorage) en verschijnen opnieuw bij het openen.<br>
-            • Gebruik de filters in de zijbalk om soorten, type of markers met foto te tonen/verbergen.<br>
-            • De knop “Live positie” toont je huidige locatie als een blauwe punt, maar slaat deze niet op.<br>
-            • In de popup kun je een marker wijzigen of verwijderen.
+            • Tik op de ronde knop rechtsonder om een nieuwe observatie te plaatsen.<br>
+            • Er verschijnt een vizier (kruis) in het midden van de kaart. Beweeg de kaart zodat het vizier op de juiste plek staat.<br>
+            • Tik nogmaals op de knop om het formulier te openen en vul type, soort, datum, tijd, opmerking en eventueel een foto in.<br>
+            • Markers worden lokaal opgeslagen op je apparaat via <b>localStorage</b> van de browser. Dit is geen zichtbaar bestand in een map, maar interne opslag van de browser.<br>
+            • Bij het opnieuw openen van de app worden alle observaties automatisch geladen.<br>
+            • De CSV-export wordt opgeslagen in de <b>Downloads</b>-map (of Bestanden/Downloads op mobiel), afhankelijk van je browser.<br>
+            • De live positie (blauwe punt) wordt alleen gebruikt om je locatie te tonen en wordt <b>niet</b> opgeslagen en niet geëxporteerd.<br>
+            • In de popup kun je een marker wijzigen of verwijderen.<br>
+            • Gebruik de filters in de zijbalk om type, soorten of markers met foto te tonen/verbergen.
         </p>
         <button onclick="hideInfo()">Sluiten</button>
     </div>
@@ -311,6 +467,8 @@
 
         let markers = []; // { id, data, layer }
         let editingId = null;
+
+        let addMode = false; // crosshair mode
 
         const speciesColors = {
             "Wilde Eend": "#2ecc71",
@@ -346,7 +504,8 @@
                 {}
             ).addTo(map);
 
-            map.on('click', onMapClick);
+            // We no longer use map click to add markers
+            map.on('click', function () {});
 
             loadMarkers();
             setupFilterListeners();
@@ -373,11 +532,41 @@
             document.getElementById("infoDialog").style.display = "none";
         }
 
-        function onMapClick(e) {
-            if (document.getElementById("form").style.display === "block") return;
-            tempLatLng = e.latlng;
-            editingId = null; // new marker
-            document.getElementById("form").style.display = "block";
+        function toggleFilterSection(headerEl) {
+            const content = headerEl.nextElementSibling;
+            if (!content) return;
+            if (content.style.display === "block") {
+                content.style.display = "none";
+                headerEl.querySelectorAll("span")[1].textContent = "▼";
+            } else {
+                content.style.display = "block";
+                headerEl.querySelectorAll("span")[1].textContent = "▲";
+            }
+        }
+
+        function toggleAddMode() {
+            const btn = document.getElementById("addObsBtn");
+            const crosshair = document.getElementById("crosshair");
+
+            if (!addMode) {
+                addMode = true;
+                btn.classList.add("cross-mode");
+                btn.textContent = "+";
+                crosshair.style.display = "block";
+            } else {
+                // second click: use crosshair position to open form
+                const center = map.getCenter();
+                tempLatLng = { lat: center.lat, lng: center.lng };
+                editingId = null;
+                document.getElementById("form").style.display = "block";
+
+                // turn off add mode but keep crosshair until save? You asked to use crosshair for precise position,
+                // so we hide it after opening the form.
+                addMode = false;
+                btn.classList.remove("cross-mode");
+                btn.textContent = "+";
+                crosshair.style.display = "none";
+            }
         }
 
         function closeForm() {
@@ -408,7 +597,6 @@
                 let saved = JSON.parse(localStorage.getItem("markers") || "[]");
 
                 if (editingId) {
-                    // update existing
                     let idx = saved.findIndex(m => m.id === editingId);
                     if (idx !== -1) {
                         saved[idx].type = type;
@@ -431,7 +619,6 @@
                         updateMarkerLayer(mObj);
                     }
                 } else {
-                    // new marker
                     let markerData = {
                         id: Date.now(),
                         lat: tempLatLng.lat,
@@ -532,7 +719,6 @@
 
             let layer;
             if (m.type === "Nest") {
-                // circle for nest
                 layer = L.circleMarker([m.lat, m.lng], {
                     radius: 8,
                     color: "#e74c3c",
@@ -541,7 +727,6 @@
                     fillOpacity: 0.9
                 });
             } else {
-                // pin marker for observation
                 layer = L.marker([m.lat, m.lng]);
             }
 
@@ -682,7 +867,6 @@
                     navigator.geolocation.clearWatch(liveWatchID);
                     liveWatchID = null;
                 }
-                // keep liveMarker on map or remove? Here we keep it.
             }
         }
 
@@ -738,6 +922,7 @@
 
 </body>
 </html>
+
 
 
 
