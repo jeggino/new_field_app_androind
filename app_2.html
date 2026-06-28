@@ -16,7 +16,10 @@
             overflow: hidden;
         }
 
-        /* Startup screen */
+        /* ============================
+           PART 1 — STARTUP SCREEN
+           ============================ */
+
         #startupScreen {
             position: fixed;
             inset: 0;
@@ -50,7 +53,10 @@
             background: #005fcc;
         }
 
-        /* Layout */
+        /* ============================
+           PART 2 — APP LAYOUT
+           ============================ */
+
         #appContainer {
             display: none;
             height: 100vh;
@@ -69,14 +75,6 @@
             position: relative;
         }
 
-        #sidebar.hidden {
-            display: none;
-        }
-
-        #sidebar h2 {
-            margin: 0 0 10px 0;
-        }
-
         #sidebar button {
             background: #0078ff;
             color: white;
@@ -89,13 +87,6 @@
 
         #sidebar button:hover {
             background: #005fcc;
-        }
-
-        #infoBtn {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            width: calc(100% - 20px);
         }
 
         #map {
@@ -208,25 +199,28 @@
      ============================ -->
 
 <div id="startupScreen">
-    <h1>Welkom Luigi</h1>
-    <p>Kies hoe je wilt beginnen</p>
-    <button onclick="startNewProject()">Nieuw project</button>
-    <button onclick="openExistingProject()">Bestaand project openen</button>
+    <h1>Welcome Luigi</h1>
+    <p>Select how you want to begin</p>
+    <button onclick="startNewProject()">New Project</button>
+    <button onclick="openExistingProject()">Open Existing Project</button>
 </div>
 
 <!-- ============================
-     PART 1 — MAP + SIDEBAR + FORM
+     PART 2 — APP CONTAINER
      ============================ -->
 
 <div id="appContainer">
-    <div id="sidebar">
-        <h2>Veldkaart</h2>
 
-        <button onclick="toggleSidebar()">Verberg zijbalk</button>
-        <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
+    <div id="sidebar">
+        <h2>Field Map</h2>
+
+        <button onclick="toggleSidebar()">Hide Sidebar</button>
+        <button id="liveBtn" onclick="toggleLive()">Live Position: OFF</button>
         <button onclick="exportCSV()">Export CSV</button>
 
         <div id="filters">
+
+            <!-- Filter: Type -->
             <div class="filter-section">
                 <div class="filter-header" onclick="toggleFilterSection(this)">
                     <span>Type</span>
@@ -235,213 +229,106 @@
                 <div class="filter-content">
                     <select id="filterType" multiple>
                         <option value="Nest" selected>Nest</option>
-                        <option value="Observatie" selected>Observatie</option>
+                        <option value="Observation" selected>Observation</option>
                     </select>
                 </div>
             </div>
 
+            <!-- Filter: Species -->
             <div class="filter-section">
                 <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Soorten</span>
+                    <span>Species</span>
                     <span>▼</span>
                 </div>
                 <div class="filter-content">
                     <select id="filterSpeciesMulti" multiple>
-                        <option value="Wilde Eend" selected>Wilde Eend</option>
-                        <option value="Meerkoet" selected>Meerkoet</option>
-                        <option value="Fuut" selected>Fuut</option>
-                        <option value="Blauwe Reiger" selected>Blauwe Reiger</option>
-                        <option value="Merel" selected>Merel</option>
-                        <option value="Huismus" selected>Huismus</option>
-                        <option value="Zwarte Kraai" selected>Zwarte Kraai</option>
-                        <option value="Ekster" selected>Ekster</option>
-                        <option value="Canadese Gans" selected>Canadese Gans</option>
-                        <option value="Knobbelzwaan" selected>Knobbelzwaan</option>
+                        <option value="Mallard" selected>Mallard</option>
+                        <option value="Coot" selected>Coot</option>
+                        <option value="Grebe" selected>Grebe</option>
+                        <option value="Heron" selected>Heron</option>
+                        <option value="Blackbird" selected>Blackbird</option>
+                        <option value="Sparrow" selected>Sparrow</option>
+                        <option value="Crow" selected>Crow</option>
+                        <option value="Magpie" selected>Magpie</option>
+                        <option value="Canada Goose" selected>Canada Goose</option>
+                        <option value="Mute Swan" selected>Mute Swan</option>
                     </select>
                 </div>
             </div>
 
+            <!-- Filter: Photo -->
             <div class="filter-section">
                 <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Foto</span>
+                    <span>Photo</span>
                     <span>▼</span>
                 </div>
                 <div class="filter-content">
-                    <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
+                    <label><input type="checkbox" id="filterPhoto"> Only with photo</label>
                 </div>
             </div>
 
-            <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
+            <button style="margin-top:10px;" onclick="resetFilters()">Reset Filters</button>
         </div>
 
         <button id="infoBtn" onclick="showInfo()">ℹ️ Info</button>
     </div>
 
+    <!-- Map -->
     <div id="map"></div>
 
+    <!-- Crosshair -->
     <div id="crosshair">
         <div id="crosshairCircle"></div>
     </div>
 
+    <!-- Add Observation Button -->
     <button id="addObsBtn" onclick="toggleAddMode()">+</button>
 
+    <!-- Form Popup -->
     <div class="form-popup" id="form">
         <h3>
-            Marker opslaan
+            Save Marker
             <span class="close-btn" onclick="closeForm()">×</span>
         </h3>
 
         <label>Type:</label><br>
         <select id="type">
-            <option value="Observatie">Observatie</option>
+            <option value="Observation">Observation</option>
             <option value="Nest">Nest</option>
         </select><br><br>
 
-        <label>Soort:</label><br>
-        <select id="species" required>
-            <option value="Wilde Eend">Wilde Eend</option>
-            <option value="Meerkoet">Meerkoet</option>
-            <option value="Fuut">Fuut</option>
-            <option value="Blauwe Reiger">Blauwe Reiger</option>
-            <option value="Merel">Merel</option>
-            <option value="Huismus">Huismus</option>
-            <option value="Zwarte Kraai">Zwarte Kraai</option>
-            <option value="Ekster">Ekster</option>
-            <option value="Canadese Gans">Canadese Gans</option>
-            <option value="Knobbelzwaan">Knobbelzwaan</option>
+        <label>Species:</label><br>
+        <select id="species">
+            <option value="Mallard">Mallard</option>
+            <option value="Coot">Coot</option>
+            <option value="Grebe">Grebe</option>
+            <option value="Heron">Heron</option>
+            <option value="Blackbird">Blackbird</option>
+            <option value="Sparrow">Sparrow</option>
+            <option value="Crow">Crow</option>
+            <option value="Magpie">Magpie</option>
+            <option value="Canada Goose">Canada Goose</option>
+            <option value="Mute Swan">Mute Swan</option>
         </select><br><br>
 
-        <label>Datum:</label><br>
-        <input type="date" id="date" required><br><br>
+        <label>Date:</label><br>
+        <input type="date" id="date"><br><br>
 
-        <label>Tijd:</label><br>
-        <input type="time" id="time" required><br><br>
+        <label>Time:</label><br>
+        <input type="time" id="time"><br><br>
 
-        <label>Opmerking:</label><br>
+        <label>Comment:</label><br>
         <textarea id="comment" rows="3"></textarea><br><br>
 
-        <label>Foto:</label><br>
+        <label>Photo:</label><br>
         <input type="file" id="photo" accept="image/*"><br><br>
 
-        <button onclick="saveMarker()">Opslaan</button>
-        <button onclick="closeForm()">Annuleren</button>
+        <button onclick="saveMarker()">Save</button>
+        <button onclick="closeForm()">Cancel</button>
     </div>
+
 </div>
 
-# PART 2----------------
-<!-- ============================
-     PART 2 — MAP + SIDEBAR + FORM
-     ============================ -->
-
-<div id="appContainer">
-    <div id="sidebar">
-        <h2>Veldkaart</h2>
-
-        <button onclick="toggleSidebar()">Verberg zijbalk</button>
-        <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
-        <button onclick="exportCSV()">Export CSV</button>
-
-        <div id="filters">
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Type</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <select id="filterType" multiple>
-                        <option value="Nest" selected>Nest</option>
-                        <option value="Observatie" selected>Observatie</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Soorten</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <select id="filterSpeciesMulti" multiple>
-                        <option value="Wilde Eend" selected>Wilde Eend</option>
-                        <option value="Meerkoet" selected>Meerkoet</option>
-                        <option value="Fuut" selected>Fuut</option>
-                        <option value="Blauwe Reiger" selected>Blauwe Reiger</option>
-                        <option value="Merel" selected>Merel</option>
-                        <option value="Huismus" selected>Huismus</option>
-                        <option value="Zwarte Kraai" selected>Zwarte Kraai</option>
-                        <option value="Ekster" selected>Ekster</option>
-                        <option value="Canadese Gans" selected>Canadese Gans</option>
-                        <option value="Knobbelzwaan" selected>Knobbelzwaan</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Foto</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
-                </div>
-            </div>
-
-            <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
-        </div>
-
-        <button id="infoBtn" onclick="showInfo()">ℹ️ Info</button>
-    </div>
-
-    <div id="map"></div>
-
-    <div id="crosshair">
-        <div id="crosshairCircle"></div>
-    </div>
-
-    <button id="addObsBtn" onclick="toggleAddMode()">+</button>
-
-    <div class="form-popup" id="form">
-        <h3>
-            Marker opslaan
-            <span class="close-btn" onclick="closeForm()">×</span>
-        </h3>
-
-        <label>Type:</label><br>
-        <select id="type">
-            <option value="Observatie">Observatie</option>
-            <option value="Nest">Nest</option>
-        </select><br><br>
-
-        <label>Soort:</label><br>
-        <select id="species" required>
-            <option value="Wilde Eend">Wilde Eend</option>
-            <option value="Meerkoet">Meerkoet</option>
-            <option value="Fuut">Fuut</option>
-            <option value="Blauwe Reiger">Blauwe Reiger</option>
-            <option value="Merel">Merel</option>
-            <option value="Huismus">Huismus</option>
-            <option value="Zwarte Kraai">Zwarte Kraai</option>
-            <option value="Ekster">Ekster</option>
-            <option value="Canadese Gans">Canadese Gans</option>
-            <option value="Knobbelzwaan">Knobbelzwaan</option>
-        </select><br><br>
-
-        <label>Datum:</label><br>
-        <input type="date" id="date" required><br><br>
-
-        <label>Tijd:</label><br>
-        <input type="time" id="time" required><br><br>
-
-        <label>Opmerking:</label><br>
-        <textarea id="comment" rows="3"></textarea><br><br>
-
-        <label>Foto:</label><br>
-        <input type="file" id="photo" accept="image/*"><br><br>
-
-        <button onclick="saveMarker()">Opslaan</button>
-        <button onclick="closeForm()">Annuleren</button>
-    </div>
-</div>
 <!-- ============================
      PART 3 — PROJECT SYSTEM
      ============================ -->
@@ -462,11 +349,11 @@ const centeredIcon = L.icon({
 });
 
 /* -----------------------------------------------------------
-   PROJECT SYSTEM — NEW PROJECT
+   NEW PROJECT
 ----------------------------------------------------------- */
 
 async function startNewProject() {
-    let name = prompt("Projectnaam");
+    let name = prompt("Project name");
     if (!name) name = "project";
 
     projectHandle = await window.showSaveFilePicker({
@@ -484,7 +371,7 @@ async function startNewProject() {
 }
 
 /* -----------------------------------------------------------
-   PROJECT SYSTEM — OPEN EXISTING PROJECT
+   OPEN EXISTING PROJECT
 ----------------------------------------------------------- */
 
 async function openExistingProject() {
@@ -514,7 +401,7 @@ function startApp() {
 }
 
 /* -----------------------------------------------------------
-   FILE WRITE — SAVE GEOJSON TO LINKED FILE
+   WRITE GEOJSON TO FILE
 ----------------------------------------------------------- */
 
 async function writeGeoJSON() {
@@ -527,7 +414,7 @@ async function writeGeoJSON() {
 }
 
 /* -----------------------------------------------------------
-   FILE READ — LOAD GEOJSON INTO LOCALSTORAGE
+   READ GEOJSON FROM FILE INTO LOCALSTORAGE
 ----------------------------------------------------------- */
 
 async function readGeoJSONIntoLocalStorage() {
@@ -559,10 +446,9 @@ function initMap() {
     map = L.map('map', { center: [52.3867, 4.9643], zoom: 15, layers: [normal] });
 }
 
-// ============================
-// PART 4 — MARKERS + FILTERS + GPS
-// ============================
-
+<!-- ============================
+     PART 4 — MARKERS + FILTERS + GPS
+     ============================ -->
 
 /* -----------------------------------------------------------
    SAVE MARKER
@@ -602,7 +488,7 @@ function saveMarker() {
 
         localStorage.setItem("markers", JSON.stringify(saved));
         loadMarkers();
-        await writeGeoJSON(); // rewrite linked file
+        await writeGeoJSON();
         closeForm();
     };
 
@@ -638,8 +524,8 @@ function makePopupHtml(m) {
     let html = `<b>${m.type}</b><br>${m.species}<br>${m.date} ${m.time}`;
     if (m.comment) html += `<br><i>${m.comment}</i>`;
     if (m.photo) html += `<br><img src="${m.photo}" style="max-width:100%;">`;
-    html += `<br><br><button onclick="editMarker(${m.id})">Wijzig</button>
-             <button onclick="deleteMarker(${m.id})">Verwijder</button>`;
+    html += `<br><br><button onclick="editMarker(${m.id})">Edit</button>
+             <button onclick="deleteMarker(${m.id})">Delete</button>`;
     return html;
 }
 
@@ -652,7 +538,7 @@ function deleteMarker(id) {
     saved = saved.filter(m => m.id !== id);
     localStorage.setItem("markers", JSON.stringify(saved));
     loadMarkers();
-    writeGeoJSON(); // rewrite file
+    writeGeoJSON();
 }
 
 /* -----------------------------------------------------------
@@ -787,7 +673,7 @@ function toggleLive() {
 
     if (!liveTracking) {
         liveTracking = true;
-        btn.textContent = "Live positie: AAN";
+        btn.textContent = "Live Position: ON";
 
         liveWatchID = navigator.geolocation.watchPosition(pos => {
             let lat = pos.coords.latitude;
@@ -809,7 +695,7 @@ function toggleLive() {
         });
     } else {
         liveTracking = false;
-        btn.textContent = "Live positie: UIT";
+        btn.textContent = "Live Position: OFF";
 
         if (liveWatchID !== null) {
             navigator.geolocation.clearWatch(liveWatchID);
@@ -819,11 +705,38 @@ function toggleLive() {
 }
 
 /* -----------------------------------------------------------
+   ADD MODE (CROSSHAIR + CLICK TO ADD)
+----------------------------------------------------------- */
+
+function toggleAddMode() {
+    addMode = !addMode;
+
+    const btn = document.getElementById("addObsBtn");
+    const cross = document.getElementById("crosshair");
+
+    if (addMode) {
+        btn.classList.add("cross-mode");
+        cross.style.display = "block";
+        map.on("click", onMapClickAddMode);
+    } else {
+        btn.classList.remove("cross-mode");
+        cross.style.display = "none";
+        map.off("click", onMapClickAddMode);
+    }
+}
+
+function onMapClickAddMode(e) {
+    tempLatLng = e.latlng;
+    editingId = null;
+    document.getElementById("form").style.display = "block";
+}
+
+/* -----------------------------------------------------------
    INFO POPUP
 ----------------------------------------------------------- */
 
 function showInfo() {
-    alert("Dit is jouw veldkaartproject. GeoJSON wordt automatisch bijgewerkt.");
+    alert("This is your field map project. GeoJSON is automatically updated.");
 }
 
 /* -----------------------------------------------------------
@@ -842,10 +755,21 @@ function toggleFilterSection(headerEl) {
         headerEl.querySelectorAll("span")[1].textContent = "▲";
     }
 }
+
+/* -----------------------------------------------------------
+   CLOSE FORM
+----------------------------------------------------------- */
+
+function closeForm() {
+    document.getElementById("form").style.display = "none";
+    editingId = null;
+}
 </script>
 
 </body>
 </html>
+
+
 
 
 
