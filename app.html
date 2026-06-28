@@ -13,36 +13,62 @@
         body {
             margin: 0;
             font-family: sans-serif;
-        }
-
-        #map {
+            display: flex;
             height: 100vh;
-            width: 100vw;
+            overflow: hidden;
         }
 
-        /* Controls */
-        #controls {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
+        /* Sidebar */
+        #sidebar {
+            width: 260px;
+            background: #f5f5f5;
+            border-right: 1px solid #ccc;
+            padding: 10px;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        #controls button {
-            background: #0078ff;
-            color: white;
-            border: none;
-            padding: 12px 16px;
-            border-radius: 6px;
-            cursor: pointer;
+        #sidebar h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+
+        #sidebar h3 {
+            margin: 10px 0 5px 0;
             font-size: 15px;
         }
 
-        #controls button:hover {
+        #sidebar button {
+            background: #0078ff;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        #sidebar button:hover {
             background: #005fcc;
+        }
+
+        #filters {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 13px;
+        }
+
+        #filters label {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Map */
+        #map {
+            flex: 1;
         }
 
         /* Popup Form */
@@ -94,40 +120,76 @@
 
 <body>
 
-    <div id="map"></div>
+    <div id="sidebar">
+        <h2>Veldkaart</h2>
 
-    <div id="controls">
-        <button onclick="locateMe()">Use GPS</button>
-        <button onclick="toggleLive()">Live Position: OFF</button>
+        <button onclick="locateMe()">Gebruik GPS</button>
+        <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
         <button onclick="exportCSV()">Export CSV</button>
+
+        <div id="filters">
+            <h3>Type</h3>
+            <label><input type="checkbox" id="filterNest" checked> Nest</label>
+            <label><input type="checkbox" id="filterObs" checked> Observatie</label>
+
+            <h3>Foto</h3>
+            <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
+
+            <h3>Soorten</h3>
+            <label><input type="checkbox" class="filterSpecies" value="Wilde Eend" checked> Wilde Eend</label>
+            <label><input type="checkbox" class="filterSpecies" value="Meerkoet" checked> Meerkoet</label>
+            <label><input type="checkbox" class="filterSpecies" value="Fuut" checked> Fuut</label>
+            <label><input type="checkbox" class="filterSpecies" value="Blauwe Reiger" checked> Blauwe Reiger</label>
+            <label><input type="checkbox" class="filterSpecies" value="Merel" checked> Merel</label>
+            <label><input type="checkbox" class="filterSpecies" value="Huismus" checked> Huismus</label>
+            <label><input type="checkbox" class="filterSpecies" value="Zwarte Kraai" checked> Zwarte Kraai</label>
+            <label><input type="checkbox" class="filterSpecies" value="Ekster" checked> Ekster</label>
+            <label><input type="checkbox" class="filterSpecies" value="Canadese Gans" checked> Canadese Gans</label>
+            <label><input type="checkbox" class="filterSpecies" value="Knobbelzwaan" checked> Knobbelzwaan</label>
+
+            <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
+        </div>
     </div>
+
+    <div id="map"></div>
 
     <div class="form-popup" id="form">
         <h3>
-            Save Marker
+            Marker opslaan
             <span class="close-btn" onclick="closeForm()">×</span>
         </h3>
 
         <label>Type:</label><br>
         <select id="type">
-            <option value="Observation">Observation</option>
+            <option value="Observatie">Observatie</option>
             <option value="Nest">Nest</option>
         </select><br><br>
 
-        <label>Species:</label><br>
-        <input id="species" required><br><br>
+        <label>Soort:</label><br>
+        <select id="species" required>
+            <option value="Wilde Eend">Wilde Eend</option>
+            <option value="Meerkoet">Meerkoet</option>
+            <option value="Fuut">Fuut</option>
+            <option value="Blauwe Reiger">Blauwe Reiger</option>
+            <option value="Merel">Merel</option>
+            <option value="Huismus">Huismus</option>
+            <option value="Zwarte Kraai">Zwarte Kraai</option>
+            <option value="Ekster">Ekster</option>
+            <option value="Canadese Gans">Canadese Gans</option>
+            <option value="Knobbelzwaan">Knobbelzwaan</option>
+        </select><br><br>
 
-        <label>Date:</label><br>
+        <label>Datum:</label><br>
         <input type="date" id="date" required><br><br>
 
-        <label>Time:</label><br>
+        <label>Tijd:</label><br>
         <input type="time" id="time" required><br><br>
 
-        <label>Photo:</label><br>
+        <label>Foto:</label><br>
         <input type="file" id="photo" accept="image/*"><br><br>
 
-        <button onclick="saveMarker()">Save</button>
-        <button onclick="closeForm()">Cancel</button>
+        <button onclick="saveMarker()">Opslaan</button>
+        <button onclick="closeForm()">Annuleren</button>
     </div>
 
     <script>
@@ -137,9 +199,22 @@
         let liveMarker = null;
         let liveWatchID = null;
 
-        window.onload = function () {
+        let markers = []; // { id, data, layer }
 
-            /* Base layers */
+        const speciesColors = {
+            "Wilde Eend": "#2ecc71",
+            "Meerkoet": "#000000",
+            "Fuut": "#e67e22",
+            "Blauwe Reiger": "#7f8c8d",
+            "Merel": "#f1c40f",
+            "Huismus": "#8e5b3c",
+            "Zwarte Kraai": "#4b0082",
+            "Ekster": "#1abc9c",
+            "Canadese Gans": "#145a32",
+            "Knobbelzwaan": "#ffffff"
+        };
+
+        window.onload = function () {
             let normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19
             });
@@ -155,15 +230,15 @@
                 layers: [normal]
             });
 
-            /* Layer switcher */
             L.control.layers(
-                { "Normal": normal, "Satellite": satellite },
+                { "Normaal": normal, "Satelliet": satellite },
                 {}
             ).addTo(map);
 
             map.on('click', onMapClick);
 
             loadMarkers();
+            setupFilterListeners();
         };
 
         function onMapClick(e) {
@@ -184,7 +259,7 @@
             let file = document.getElementById("photo").files[0];
 
             if (!species || !date || !time) {
-                alert("Please fill in all fields");
+                alert("Vul alle velden in.");
                 return;
             }
 
@@ -196,6 +271,7 @@
                 let photoData = e.target.result || null;
 
                 let markerData = {
+                    id: Date.now(),
                     lat: tempLatLng.lat,
                     lng: tempLatLng.lng,
                     type: type,
@@ -212,7 +288,6 @@
                 addMarkerToMap(markerData);
                 syncToSheets(markerData);
 
-                document.getElementById("species").value = "";
                 document.getElementById("date").value = "";
                 document.getElementById("time").value = "";
                 document.getElementById("photo").value = "";
@@ -223,6 +298,7 @@
                 reader.readAsDataURL(file);
             } else {
                 let markerData = {
+                    id: Date.now(),
                     lat: tempLatLng.lat,
                     lng: tempLatLng.lng,
                     type: type,
@@ -243,14 +319,32 @@
         }
 
         function addMarkerToMap(m) {
-            let popupHtml = `<b>${m.type}</b><br>${m.species}<br>${m.date} ${m.time}`;
+            let borderColor = m.type === "Nest" ? "#e74c3c" : "#3498db";
+            let fillColor = speciesColors[m.species] || "#ffffff";
+
+            let layer = L.circleMarker([m.lat, m.lng], {
+                radius: 8,
+                color: borderColor,
+                weight: 3,
+                fillColor: fillColor,
+                fillOpacity: 0.9
+            });
+
+            let popupHtml = `
+                <b>${m.type}</b><br>
+                ${m.species}<br>
+                ${m.date} ${m.time}
+            `;
             if (m.photo) {
                 popupHtml += `<br><img src="${m.photo}" width="150">`;
             }
+            popupHtml += `<br><br><button onclick="deleteMarker(${m.id})">Verwijder marker</button>`;
 
-            L.marker([m.lat, m.lng])
-                .addTo(map)
-                .bindPopup(popupHtml);
+            layer.bindPopup(popupHtml);
+            layer.addTo(map);
+
+            markers.push({ id: m.id, data: m, layer: layer });
+            applyFilters();
         }
 
         function loadMarkers() {
@@ -259,10 +353,10 @@
         }
 
         function exportCSV() {
-            let markers = JSON.parse(localStorage.getItem("markers") || "[]");
+            let saved = JSON.parse(localStorage.getItem("markers") || "[]");
 
             let csv = "lat,lng,type,species,date,time\n";
-            markers.forEach(m => {
+            saved.forEach(m => {
                 csv += `${m.lat},${m.lng},${m.type},${m.species},${m.date},${m.time}\n`;
             });
 
@@ -283,15 +377,27 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(markerData)
             }).catch(err => {
-                alert("Could not sync to Google Sheets");
                 console.log("Sheets sync error:", err);
             });
         }
 
-        /* GPS single locate */
+        function deleteMarker(id) {
+            if (!confirm("Weet je zeker dat je deze marker wilt verwijderen?")) return;
+
+            let saved = JSON.parse(localStorage.getItem("markers") || "[]");
+            saved = saved.filter(m => m.id !== id);
+            localStorage.setItem("markers", JSON.stringify(saved));
+
+            let idx = markers.findIndex(m => m.id === id);
+            if (idx !== -1) {
+                map.removeLayer(markers[idx].layer);
+                markers.splice(idx, 1);
+            }
+        }
+
         function locateMe() {
             if (!navigator.geolocation) {
-                alert("Geolocation not supported");
+                alert("Geolocatie niet ondersteund.");
                 return;
             }
 
@@ -306,27 +412,34 @@
                     color: "blue"
                 }).addTo(map);
             }, err => {
-                alert("Could not get location");
+                alert("Kon locatie niet ophalen.");
                 console.log(err);
             });
         }
 
-        /* Live GPS tracking */
         function toggleLive() {
-            let btn = document.querySelector("#controls button:nth-child(2)");
+            let btn = document.getElementById("liveBtn");
 
             if (!liveTracking) {
+                if (!navigator.geolocation) {
+                    alert("Geolocatie niet ondersteund.");
+                    return;
+                }
+
                 liveTracking = true;
-                btn.textContent = "Live Position: ON";
+                btn.textContent = "Live positie: AAN";
 
                 liveWatchID = navigator.geolocation.watchPosition(pos => {
                     let lat = pos.coords.latitude;
                     let lng = pos.coords.longitude;
 
                     if (!liveMarker) {
-                        liveMarker = L.circle([lat, lng], {
-                            radius: 5,
-                            color: "red"
+                        liveMarker = L.circleMarker([lat, lng], {
+                            radius: 6,
+                            color: "#3498db",
+                            weight: 3,
+                            fillColor: "#3498db",
+                            fillOpacity: 0.9
                         }).addTo(map);
                     } else {
                         liveMarker.setLatLng([lat, lng]);
@@ -336,15 +449,61 @@
                 });
             } else {
                 liveTracking = false;
-                btn.textContent = "Live Position: OFF";
+                btn.textContent = "Live positie: UIT";
 
-                navigator.geolocation.clearWatch(liveWatchID);
-                liveWatchID = null;
+                if (liveWatchID !== null) {
+                    navigator.geolocation.clearWatch(liveWatchID);
+                    liveWatchID = null;
+                }
             }
+        }
+
+        function setupFilterListeners() {
+            document.getElementById("filterNest").addEventListener("change", applyFilters);
+            document.getElementById("filterObs").addEventListener("change", applyFilters);
+            document.getElementById("filterPhoto").addEventListener("change", applyFilters);
+
+            document.querySelectorAll(".filterSpecies").forEach(cb => {
+                cb.addEventListener("change", applyFilters);
+            });
+        }
+
+        function resetFilters() {
+            document.getElementById("filterNest").checked = true;
+            document.getElementById("filterObs").checked = true;
+            document.getElementById("filterPhoto").checked = false;
+            document.querySelectorAll(".filterSpecies").forEach(cb => cb.checked = true);
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let showNest = document.getElementById("filterNest").checked;
+            let showObs = document.getElementById("filterObs").checked;
+            let onlyPhoto = document.getElementById("filterPhoto").checked;
+
+            let speciesAllowed = {};
+            document.querySelectorAll(".filterSpecies").forEach(cb => {
+                speciesAllowed[cb.value] = cb.checked;
+            });
+
+            markers.forEach(m => {
+                let d = m.data;
+                let visible = true;
+
+                if (d.type === "Nest" && !showNest) visible = false;
+                if (d.type === "Observatie" && !showObs) visible = false;
+                if (!speciesAllowed[d.species]) visible = false;
+                if (onlyPhoto && !d.photo) visible = false;
+
+                if (visible) {
+                    if (!map.hasLayer(m.layer)) map.addLayer(m.layer);
+                } else {
+                    if (map.hasLayer(m.layer)) map.removeLayer(m.layer);
+                }
+            });
         }
     </script>
 
 </body>
 </html>
 
-</html>
