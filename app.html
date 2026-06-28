@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Field Marker App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Controls */
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+
+        #controls button {
+            background: #0078ff;
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        #controls button:hover {
+            background: #005fcc;
+        }
+
+        /* Popup Form */
+        .form-popup {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 320px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .form-popup h3 {
+            margin-top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            cursor: pointer;
+            font-size: 20px;
+            padding: 0 5px;
+        }
+
+        .form-popup button {
+            background: #0078ff;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 5px;
+        }
+
+        .form-popup button:hover {
+            background: #005fcc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="map"></div>
+
+    <div id="controls">
+        <button onclick="locateMe()">Use GPS</button>
+        <button onclick="exportCSV()">Export CSV</button>
+    </div>
+
+    <div class="form-popup" id="form">
+        <h3>
+            Save Marker
+            <span class="close-btn" onclick="closeForm()">×</span>
+        </h3>
+
+        <label>Species:</label><br>
+        <input id="species" required><br><br>
+
+        <label>Date:</label><br>
+        <input type="date" id="date" required><br><br>
+
+        <label>Time:</label><br>
+        <input type="time" id="time" required><br><br>
+
+        <label>Photo:</label><br>
+        <input type="file" id="photo" accept="image/*"><br><br>
+
+        <button onclick="saveMarker()">Save</button>
+        <button onclick="closeForm()">Cancel</button>
+    </div>
+
+    <script>
+        let map;
+        let tempLatLng = null;
+
+        window.onload = function () {
+            map = L.map('map').setView([52.3867, 4.9643], 15);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+
+            map.on('click', onMapClick);
+
+            loadMarkers();
+        };
+
+        function onMapClick(e) {
+            if (document.getElementById("form").style.display === "block") return;
+            tempLatLng = e.latlng;
+            document.getElementById("form").style.display = "block";
+        }
+
+        function closeForm() {
+            document.getElementById("form").style.display = "none";
+        }
+
+        function saveMarker() {
+            let species = document.getElementById("species").value;
+            let date = document.getElementById("date").value;
+            let time = document.getElementById("time").value;
+            let file = document.getElementById("photo").files[0];
+
+            if (!species || !date || !time) {
+                alert("Please fill in all fields");
+                return;
+            }
+
+            if (!tempLatLng) return;
+
+            let reader = new FileReader();
+
+            reader.onload = function (e) {
+                let photoData = e.target.result || null;
+
+                let markerData = {
+                    lat: tempLatLng.lat,
+                    lng: tempLatLng.lng,
+                    species: species,
+                    date: date,
+                    time: time,
+                    photo: photoData
+                };
+
+                let saved = JSON.parse(localStorage.getItem("markers") || "[]");
+                saved.push(markerData);
+                localStorage.setItem("markers", JSON.stringify(saved));
+
+                addMarkerToMap(markerData);
+                syncToSheets(markerData);
+
+                document.getElementById("species").value = "";
+                document.getElementById("date").value = "";
+                document.getElementById("time").value = "";
+                document.getElementById("photo").value = "";
+                closeForm();
+            };
+
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                let markerData = {
+                    lat: tempLatLng.lat,
+                    lng: tempLatLng.lng,
+                    species: species,
+                    date: date,
+                    time: time,
+                    photo: null
+                };
+
+                let saved = JSON.parse(localStorage.getItem("markers") || "[]");
+                saved.push(markerData);
+                localStorage.setItem("markers", JSON.stringify(saved));
+
+                addMarkerToMap(markerData);
+                syncToSheets(markerData);
+                closeForm();
+            }
+        }
+
+        function addMarkerToMap(m) {
+            let popupHtml = `<b>${m.species}</b><br>${m.date} ${m.time}`;
+            if (m.photo) {
+                popupHtml += `<br><img src="${m.photo}" width="150">`;
+            }
+
+            L.marker([m.lat, m.lng])
+                .addTo(map)
+                .bindPopup(popupHtml);
+        }
+
+        function loadMarkers() {
+            let saved = JSON.parse(localStorage.getItem("markers") || "[]");
+            saved.forEach(addMarkerToMap);
+        }
+
+        function exportCSV() {
+            let markers = JSON.parse(localStorage.getItem("markers") || "[]");
+
+            let csv = "lat,lng,species,date,time\n";
+            markers.forEach(m => {
+                csv += `${m.lat},${m.lng},${m.species},${m.date},${m.time}\n`;
+            });
+
+            let blob = new Blob([csv], { type: "text/csv" });
+            let url = URL.createObjectURL(blob);
+
+            let a = document.createElement("a");
+            a.href = url;
+            a.download = "markers.csv";
+            a.click();
+        }
+
+        function syncToSheets(markerData) {
+            const url = "https://script.google.com/macros/s/AKfycbxlIZPwLgZNhUpLPrZ0tB77Un_X1MqTgcU5u4vD6bF537UGql75MRyrkIQBeQJsDiNjcA/exec";
+
+            fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(markerData)
+            }).catch(err => {
+                alert("Could not sync to Google Sheets");
+                console.log("Sheets sync error:", err);
+            });
+        }
+
+        function locateMe() {
+            if (!navigator.geolocation) {
+                alert("Geolocation not supported");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(pos => {
+                let lat = pos.coords.latitude;
+                let lng = pos.coords.longitude;
+
+                map.setView([lat, lng], 18);
+
+                L.circle([lat, lng], {
+                    radius: 5,
+                    color: "blue"
+                }).addTo(map);
+            }, err => {
+                alert("Could not get location");
+                console.log(err);
+            });
+        }
+    </script>
+
+</body>
+</html>
