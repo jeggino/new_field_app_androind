@@ -12,23 +12,53 @@
         body {
             margin: 0;
             font-family: sans-serif;
-            display: flex;
             height: 100vh;
             overflow: hidden;
         }
 
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-            }
-            #sidebar {
-                width: 100%;
-                height: 260px;
-                border-bottom: 1px solid #ccc;
-            }
+        /* Startup screen */
+        #startupScreen {
+            position: fixed;
+            inset: 0;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #startupScreen h1 {
+            margin-bottom: 20px;
+        }
+
+        #startupScreen button {
+            background: #0078ff;
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 260px;
+            margin-top: 10px;
+        }
+
+        #startupScreen button:hover {
+            background: #005fcc;
+        }
+
+        /* Layout */
+        #appContainer {
+            display: none;
+            height: 100vh;
+            overflow: hidden;
         }
 
         #sidebar {
+            width: 260px;
             background: #f5f5f5;
             border-right: 1px solid #ccc;
             padding: 10px;
@@ -45,7 +75,6 @@
 
         #sidebar h2 {
             margin: 0 0 10px 0;
-            font-size: 18px;
         }
 
         #sidebar button {
@@ -55,7 +84,6 @@
             padding: 10px 14px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
             width: 100%;
         }
 
@@ -70,70 +98,11 @@
             width: calc(100% - 20px);
         }
 
-        #filters {
-            flex: 1;
-            overflow-y: auto;
-            font-size: 13px;
-        }
-
-        .filter-section {
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            margin-top: 8px;
-            background: #ffffff;
-        }
-
-        .filter-header {
-            padding: 6px 8px;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-        }
-
-        .filter-header span {
-            font-weight: bold;
-        }
-
-        .filter-content {
-            padding: 6px 8px;
-            display: none;
-            font-size: 13px;
-        }
-
-        select[multiple] {
-            height: 80px;
-        }
-
         #map {
             flex: 1;
-            position: relative;
         }
 
-        #addObsBtn {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: #0078ff;
-            color: white;
-            border: none;
-            font-size: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 1200;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        #addObsBtn.cross-mode {
-            background: #27ae60;
-        }
-
+        /* Crosshair */
         #crosshair {
             position: fixed;
             top: 50%;
@@ -179,6 +148,30 @@
             transform: translate(-50%, -50%);
         }
 
+        /* Add button */
+        #addObsBtn {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #0078ff;
+            color: white;
+            border: none;
+            font-size: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1200;
+        }
+
+        #addObsBtn.cross-mode {
+            background: #27ae60;
+        }
+
+        /* Form popup */
         .form-popup {
             position: fixed;
             bottom: 20px;
@@ -188,7 +181,6 @@
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #ccc;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             width: 90%;
             max-width: 340px;
             z-index: 1000;
@@ -205,12 +197,21 @@
         .close-btn {
             cursor: pointer;
             font-size: 20px;
-            padding: 0 5px;
         }
     </style>
 </head>
+
 <body>
 
+<!-- Startup screen -->
+<div id="startupScreen">
+    <h1>Welkom Luigi</h1>
+    <p>Kies hoe je wilt beginnen</p>
+    <button onclick="startNewProject()">Nieuw project</button>
+    <button onclick="openExistingProject()">Bestaand project openen</button>
+</div>
+
+<div id="appContainer">
     <div id="sidebar">
         <h2>Veldkaart</h2>
 
@@ -318,113 +319,74 @@
         <button onclick="saveMarker()">Opslaan</button>
         <button onclick="closeForm()">Annuleren</button>
     </div>
-
-    <div id="infoDialog" style="display:none;">
-        <h3>Project info</h3>
-        <p>
-            Deze app werkt met projecten.<br>
-            Bij het starten kies je of je een nieuw project maakt of een bestaand GeoJSON-bestand opent.<br>
-            Elke keer dat je een observatie toevoegt, wijzigt of verwijdert, wordt hetzelfde GeoJSON-bestand opnieuw weggeschreven.
-        </p>
-        <button onclick="hideInfo()">Sluiten</button>
-    </div>
+</div>
 
 <script>
 let map;
+let markers = [];
 let tempLatLng = null;
-let liveTracking = false;
-let liveMarker = null;
-let liveWatchID = null;
-
-let markers = []; // { id, data, layer }
 let editingId = null;
 let addMode = false;
 
-let projectHandle = null; // FileSystem handle for current project
-
-const speciesColors = {
-    "Wilde Eend": "#2ecc71",
-    "Meerkoet": "#000000",
-    "Fuut": "#e67e22",
-    "Blauwe Reiger": "#7f8c8d",
-    "Merel": "#f1c40f",
-    "Huismus": "#8e5b3c",
-    "Zwarte Kraai": "#4b0082",
-    "Ekster": "#1abc9c",
-    "Canadese Gans": "#145a32",
-    "Knobbelzwaan": "#ffffff"
-};
+let projectHandle = null; // The linked GeoJSON file
 
 const centeredIcon = L.icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
     iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34]
+    iconAnchor: [12, 41]
 });
 
-window.onload = async function () {
-    let normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
+/* -----------------------------------------------------------
+   PROJECT SYSTEM
+----------------------------------------------------------- */
+
+async function startNewProject() {
+    let name = prompt("Projectnaam");
+    if (!name) name = "project";
+
+    projectHandle = await window.showSaveFilePicker({
+        suggestedName: name + ".geojson",
+        types: [{
+            description: "GeoJSON",
+            accept: { "application/geo+json": [".geojson"] }
+        }]
     });
 
-    let satellite = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        { maxZoom: 19 }
-    );
+    localStorage.setItem("markers", "[]");
+    await writeGeoJSON();
 
-    map = L.map('map', {
-        center: [52.3867, 4.9643],
-        zoom: 15,
-        layers: [normal]
+    startApp();
+}
+
+async function openExistingProject() {
+    const [handle] = await window.showOpenFilePicker({
+        types: [{
+            description: "GeoJSON",
+            accept: { "application/geo+json": [".geojson"] }
+        }]
     });
 
-    L.control.layers(
-        { "Normaal": normal, "Satelliet": satellite },
-        {}
-    ).addTo(map);
+    projectHandle = handle;
+    await readGeoJSONIntoLocalStorage();
 
-    map.on('click', function () {});
+    startApp();
+}
 
-    await initProject();
+function startApp() {
+    document.getElementById("startupScreen").style.display = "none";
+    document.getElementById("appContainer").style.display = "flex";
+    initMap();
     loadMarkers();
     setupFilterListeners();
-};
-
-async function initProject() {
-    try {
-        let isNew = confirm("Nieuw project: OK, Bestaand project: Annuleren");
-        if (isNew) {
-            let name = prompt("Projectnaam (zonder extensie)");
-            if (!name) name = "markers";
-
-            projectHandle = await window.showSaveFilePicker({
-                suggestedName: name + ".geojson",
-                types: [{
-                    description: "GeoJSON",
-                    accept: { "application/geo+json": [".geojson"] }
-                }]
-            });
-
-            localStorage.setItem("markers", "[]");
-            await writeGeoJSON();
-        } else {
-            const [handle] = await window.showOpenFilePicker({
-                types: [{
-                    description: "GeoJSON",
-                    accept: { "application/geo+json": [".geojson"] }
-                }]
-            });
-            projectHandle = handle;
-            await readGeoJSONIntoLocalStorage();
-        }
-    } catch (e) {
-        console.log("Project init cancelled or failed", e);
-        localStorage.setItem("markers", "[]");
-    }
 }
+
+/* -----------------------------------------------------------
+   FILE READ / WRITE
+----------------------------------------------------------- */
 
 async function writeGeoJSON() {
     if (!projectHandle) return;
+
     const geojson = markersToGeoJSON();
     const writable = await projectHandle.createWritable();
     await writable.write(JSON.stringify(geojson, null, 2));
@@ -432,13 +394,12 @@ async function writeGeoJSON() {
 }
 
 async function readGeoJSONIntoLocalStorage() {
-    if (!projectHandle) return;
     const file = await projectHandle.getFile();
     const text = await file.text();
     const geojson = JSON.parse(text);
 
-    const importedMarkers = (geojson.features || []).map(f => ({
-        id: f.properties.id || Date.now(),
+    const importedMarkers = geojson.features.map(f => ({
+        id: f.properties.id,
         lat: f.geometry.coordinates[1],
         lng: f.geometry.coordinates[0],
         type: f.properties.type,
@@ -452,56 +413,50 @@ async function readGeoJSONIntoLocalStorage() {
     localStorage.setItem("markers", JSON.stringify(importedMarkers));
 }
 
+/* -----------------------------------------------------------
+   MAP INITIALIZATION
+----------------------------------------------------------- */
+
+function initMap() {
+    let normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    map = L.map('map', { center: [52.3867, 4.9643], zoom: 15, layers: [normal] });
+}
+
+/* -----------------------------------------------------------
+   UI CONTROLS
+----------------------------------------------------------- */
+
 function toggleSidebar() {
-    const sidebar = document.getElementById("sidebar");
-    sidebar.classList.toggle("hidden");
-}
-
-function showInfo() {
-    document.getElementById("infoDialog").style.display = "block";
-}
-
-function hideInfo() {
-    document.getElementById("infoDialog").style.display = "none";
-}
-
-function toggleFilterSection(headerEl) {
-    const content = headerEl.nextElementSibling;
-    if (!content) return;
-    if (content.style.display === "block") {
-        content.style.display = "none";
-        headerEl.querySelectorAll("span")[1].textContent = "▼";
-    } else {
-        content.style.display = "block";
-        headerEl.querySelectorAll("span")[1].textContent = "▲";
-    }
+    document.getElementById("sidebar").classList.toggle("hidden");
 }
 
 function toggleAddMode() {
     const btn = document.getElementById("addObsBtn");
-    const crosshair = document.getElementById("crosshair");
+    const cross = document.getElementById("crosshair");
 
     if (!addMode) {
         addMode = true;
         btn.classList.add("cross-mode");
-        crosshair.style.display = "block";
+        cross.style.display = "block";
     } else {
-        const center = map.getCenter();
-        tempLatLng = { lat: center.lat, lng: center.lng };
+        tempLatLng = map.getCenter();
         editingId = null;
         document.getElementById("form").style.display = "block";
-
         addMode = false;
         btn.classList.remove("cross-mode");
-        crosshair.style.display = "none";
+        cross.style.display = "none";
     }
 }
 
 function closeForm() {
     document.getElementById("form").style.display = "none";
-    editingId = null;
     tempLatLng = null;
+    editingId = null;
 }
+
+/* -----------------------------------------------------------
+   SAVE MARKER
+----------------------------------------------------------- */
 
 function saveMarker() {
     let type = document.getElementById("type").value;
@@ -511,159 +466,126 @@ function saveMarker() {
     let comment = document.getElementById("comment").value;
     let file = document.getElementById("photo").files[0];
 
-    if (!species || !date || !time) {
-        alert("Vul alle verplichte velden in.");
-        return;
-    }
-
-    if (!tempLatLng && !editingId) {
-        alert("Geen locatie beschikbaar.");
-        return;
-    }
-
     let reader = new FileReader();
 
-    reader.onload = async function (e) {
+    reader.onload = async function(e) {
         let photoData = e.target.result || null;
         let saved = JSON.parse(localStorage.getItem("markers") || "[]");
 
         if (editingId) {
             let idx = saved.findIndex(m => m.id === editingId);
-            if (idx !== -1) {
-                saved[idx].type = type;
-                saved[idx].species = species;
-                saved[idx].date = date;
-                saved[idx].time = time;
-                saved[idx].comment = comment;
-                if (file) saved[idx].photo = photoData;
-            }
+            saved[idx].type = type;
+            saved[idx].species = species;
+            saved[idx].date = date;
+            saved[idx].time = time;
+            saved[idx].comment = comment;
+            if (file) saved[idx].photo = photoData;
         } else {
-            let markerData = {
+            saved.push({
                 id: Date.now(),
                 lat: tempLatLng.lat,
                 lng: tempLatLng.lng,
-                type: type,
-                species: species,
-                date: date,
-                time: time,
-                comment: comment,
+                type, species, date, time, comment,
                 photo: photoData
-            };
-            saved.push(markerData);
+            });
         }
 
         localStorage.setItem("markers", JSON.stringify(saved));
         loadMarkers();
-        await writeGeoJSON();
-
-        document.getElementById("date").value = "";
-        document.getElementById("time").value = "";
-        document.getElementById("comment").value = "";
-        document.getElementById("photo").value = "";
+        await writeGeoJSON(); // ⭐ rewrite the linked file
         closeForm();
     };
 
-    if (file) {
-        reader.readAsDataURL(file);
-    } else {
-        reader.onload({ target: { result: null } });
-    }
+    if (file) reader.readAsDataURL(file);
+    else reader.onload({ target: { result: null } });
 }
 
-function makePopupHtml(m) {
-    let popupHtml = `
-        <b>${m.type}</b><br>
-        ${m.species}<br>
-        ${m.date} ${m.time}
-    `;
-    if (m.comment && m.comment.trim() !== "") {
-        popupHtml += `<br><i>${m.comment}</i>`;
-    }
-    if (m.photo) {
-        popupHtml += `<br><img src="${m.photo}" style="max-width:100%;height:auto;">`;
-    }
-    popupHtml += `
-        <br><br>
-        <button onclick="editMarker(${m.id})">Wijzig</button>
-        <button onclick="deleteMarker(${m.id})">Verwijder</button>
-    `;
-    return popupHtml;
-}
-
-function addMarkerToMap(m) {
-    let fillColor = speciesColors[m.species] || "#ffffff";
-
-    let layer;
-    if (m.type === "Nest") {
-        layer = L.circleMarker([m.lat, m.lng], {
-            radius: 8,
-            color: "#e74c3c",
-            weight: 3,
-            fillColor: fillColor,
-            fillOpacity: 0.9
-        });
-    } else {
-        layer = L.marker([m.lat, m.lng], { icon: centeredIcon });
-    }
-
-    layer.bindPopup(makePopupHtml(m));
-    layer.addTo(map);
-
-    markers.push({ id: m.id, data: m, layer: layer });
-}
-
-function updateMarkerLayer(mObj) {
-    if (map.hasLayer(mObj.layer)) {
-        map.removeLayer(mObj.layer);
-    }
-    let d = mObj.data;
-    let fillColor = speciesColors[d.species] || "#ffffff";
-
-    let layer;
-    if (d.type === "Nest") {
-        layer = L.circleMarker([d.lat, d.lng], {
-            radius: 8,
-            color: "#e74c3c",
-            weight: 3,
-            fillColor: fillColor,
-            fillOpacity: 0.9
-        });
-    } else {
-        layer = L.marker([d.lat, d.lng], { icon: centeredIcon });
-    }
-
-    layer.bindPopup(makePopupHtml(d));
-    layer.addTo(map);
-    mObj.layer = layer;
-}
+/* -----------------------------------------------------------
+   LOAD MARKERS
+----------------------------------------------------------- */
 
 function loadMarkers() {
     let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-    markers.forEach(m => {
-        if (map.hasLayer(m.layer)) map.removeLayer(m.layer);
-    });
+    markers.forEach(m => map.removeLayer(m.layer));
     markers = [];
-    saved.forEach(addMarkerToMap);
+
+    saved.forEach(m => {
+        let layer = L.marker([m.lat, m.lng], { icon: centeredIcon })
+            .bindPopup(makePopupHtml(m))
+            .addTo(map);
+
+        markers.push({ id: m.id, data: m, layer });
+    });
+
     applyFilters();
 }
 
+/* -----------------------------------------------------------
+   POPUP HTML
+----------------------------------------------------------- */
+
+function makePopupHtml(m) {
+    let html = `<b>${m.type}</b><br>${m.species}<br>${m.date} ${m.time}`;
+    if (m.comment) html += `<br><i>${m.comment}</i>`;
+    if (m.photo) html += `<br><img src="${m.photo}" style="max-width:100%;">`;
+    html += `<br><br><button onclick="editMarker(${m.id})">Wijzig</button>
+             <button onclick="deleteMarker(${m.id})">Verwijder</button>`;
+    return html;
+}
+
+/* -----------------------------------------------------------
+   DELETE MARKER
+----------------------------------------------------------- */
+
+function deleteMarker(id) {
+    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
+    saved = saved.filter(m => m.id !== id);
+    localStorage.setItem("markers", JSON.stringify(saved));
+    loadMarkers();
+    writeGeoJSON(); // ⭐ rewrite file
+}
+
+/* -----------------------------------------------------------
+   EDIT MARKER
+----------------------------------------------------------- */
+
+function editMarker(id) {
+    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
+    let m = saved.find(x => x.id === id);
+
+    editingId = id;
+    tempLatLng = { lat: m.lat, lng: m.lng };
+
+    document.getElementById("type").value = m.type;
+    document.getElementById("species").value = m.species;
+    document.getElementById("date").value = m.date;
+    document.getElementById("time").value = m.time;
+    document.getElementById("comment").value = m.comment || "";
+
+    document.getElementById("form").style.display = "block";
+}
+
+/* -----------------------------------------------------------
+   CSV EXPORT
+----------------------------------------------------------- */
+
 function exportCSV() {
     let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-
     let csv = "lat,lng,type,species,date,time,comment\n";
     saved.forEach(m => {
-        let safeComment = (m.comment || "").replace(/"/g, '""');
-        csv += `${m.lat},${m.lng},${m.type},${m.species},${m.date},${m.time},"${safeComment}"\n`;
+        csv += `${m.lat},${m.lng},${m.type},${m.species},${m.date},${m.time},"${m.comment}"\n`;
     });
 
     let blob = new Blob([csv], { type: "text/csv" });
-    let url = URL.createObjectURL(blob);
-
     let a = document.createElement("a");
-    a.href = url;
+    a.href = URL.createObjectURL(blob);
     a.download = "markers.csv";
     a.click();
 }
+
+/* -----------------------------------------------------------
+   GEOJSON BUILDER
+----------------------------------------------------------- */
 
 function markersToGeoJSON() {
     let saved = JSON.parse(localStorage.getItem("markers") || "[]");
@@ -689,79 +611,9 @@ function markersToGeoJSON() {
     };
 }
 
-function deleteMarker(id) {
-    if (!confirm("Weet je zeker dat je deze marker wilt verwijderen")) return;
-
-    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-    saved = saved.filter(m => m.id !== id);
-    localStorage.setItem("markers", JSON.stringify(saved));
-
-    let idx = markers.findIndex(m => m.id === id);
-    if (idx !== -1) {
-        map.removeLayer(markers[idx].layer);
-        markers.splice(idx, 1);
-    }
-
-    writeGeoJSON();
-}
-
-function editMarker(id) {
-    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-    let m = saved.find(x => x.id === id);
-    if (!m) return;
-
-    editingId = id;
-    tempLatLng = { lat: m.lat, lng: m.lng };
-
-    document.getElementById("type").value = m.type;
-    document.getElementById("species").value = m.species;
-    document.getElementById("date").value = m.date;
-    document.getElementById("time").value = m.time;
-    document.getElementById("comment").value = m.comment || "";
-
-    document.getElementById("form").style.display = "block";
-}
-
-function toggleLive() {
-    let btn = document.getElementById("liveBtn");
-
-    if (!liveTracking) {
-        if (!navigator.geolocation) {
-            alert("Geolocatie niet ondersteund.");
-            return;
-        }
-
-        liveTracking = true;
-        btn.textContent = "Live positie: AAN";
-
-        liveWatchID = navigator.geolocation.watchPosition(pos => {
-            let lat = pos.coords.latitude;
-            let lng = pos.coords.longitude;
-
-            if (!liveMarker) {
-                liveMarker = L.circleMarker([lat, lng], {
-                    radius: 6,
-                    color: "#3498db",
-                    weight: 3,
-                    fillColor: "#3498db",
-                    fillOpacity: 0.9
-                }).addTo(map);
-            } else {
-                liveMarker.setLatLng([lat, lng]);
-            }
-
-            map.setView([lat, lng]);
-        });
-    } else {
-        liveTracking = false;
-        btn.textContent = "Live positie: UIT";
-
-        if (liveWatchID !== null) {
-            navigator.geolocation.clearWatch(liveWatchID);
-            liveWatchID = null;
-        }
-    }
-}
+/* -----------------------------------------------------------
+   FILTERS
+----------------------------------------------------------- */
 
 function setupFilterListeners() {
     document.getElementById("filterType").addEventListener("change", applyFilters);
@@ -776,45 +628,9 @@ function resetFilters() {
     const speciesSel = document.getElementById("filterSpeciesMulti");
     for (let opt of speciesSel.options) opt.selected = true;
 
-    document.getElementById("filterPhoto").checked = false;
-    applyFilters();
-}
+    document.getElementById("filterPhoto").checked
 
-function getSelectedValues(selectEl) {
-    let vals = [];
-    for (let opt of selectEl.options) {
-        if (opt.selected) vals.push(opt.value);
-    }
-    return vals;
-}
 
-function applyFilters() {
-    let typeSel = document.getElementById("filterType");
-    let speciesSel = document.getElementById("filterSpeciesMulti");
-    let onlyPhoto = document.getElementById("filterPhoto").checked;
-
-    let typesAllowed = getSelectedValues(typeSel);
-    let speciesAllowed = getSelectedValues(speciesSel);
-
-    markers.forEach(m => {
-        let d = m.data;
-        let visible = true;
-
-        if (!typesAllowed.includes(d.type)) visible = false;
-        if (!speciesAllowed.includes(d.species)) visible = false;
-        if (onlyPhoto && !d.photo) visible = false;
-
-        if (visible) {
-            if (!map.hasLayer(m.layer)) map.addLayer(m.layer);
-        } else {
-            if (map.hasLayer(m.layer)) map.removeLayer(m.layer);
-        }
-    });
-}
-</script>
-
-</body>
-</html>
 
 
 
