@@ -8,197 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: sans-serif;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Startup screen */
-        #startupScreen {
-            position: fixed;
-            inset: 0;
-            background: #f5f5f5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 5000;
-            text-align: center;
-            padding: 20px;
-        }
-
-        #startupScreen h1 {
-            margin-bottom: 20px;
-        }
-
-        #startupScreen button {
-            background: #0078ff;
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-            width: 260px;
-            margin-top: 10px;
-        }
-
-        #startupScreen button:hover {
-            background: #005fcc;
-        }
-
-        /* Layout */
-        #appContainer {
-            display: none;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        #sidebar {
-            width: 260px;
-            background: #f5f5f5;
-            border-right: 1px solid #ccc;
-            padding: 10px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            position: relative;
-        }
-
-        #sidebar.hidden {
-            display: none;
-        }
-
-        #sidebar h2 {
-            margin: 0 0 10px 0;
-        }
-
-        #sidebar button {
-            background: #0078ff;
-            color: white;
-            border: none;
-            padding: 10px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        #sidebar button:hover {
-            background: #005fcc;
-        }
-
-        #infoBtn {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            width: calc(100% - 20px);
-        }
-
-        #map {
-            flex: 1;
-        }
-
-        /* Crosshair */
-        #crosshair {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 40px;
-            height: 40px;
-            margin-left: -20px;
-            margin-top: -20px;
-            z-index: 1100;
-            pointer-events: none;
-            display: none;
-        }
-
-        #crosshair::before,
-        #crosshair::after {
-            content: "";
-            position: absolute;
-            background: rgba(0,0,0,0.7);
-        }
-
-        #crosshair::before {
-            width: 2px;
-            height: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        #crosshair::after {
-            height: 2px;
-            width: 40px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        #crosshairCircle {
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 2px solid rgba(0,0,0,0.7);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Add button */
-        #addObsBtn {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: #0078ff;
-            color: white;
-            border: none;
-            font-size: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 1200;
-        }
-
-        #addObsBtn.cross-mode {
-            background: #27ae60;
-        }
-
-        /* Form popup */
-        .form-popup {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            width: 90%;
-            max-width: 340px;
-            z-index: 1000;
-            display: none;
-        }
-
-        .form-popup h3 {
-            margin-top: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .close-btn {
-            cursor: pointer;
-            font-size: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -211,7 +21,9 @@
     <button onclick="openExistingProject()">Bestaand project openen</button>
 </div>
 
+<!-- Main App -->
 <div id="appContainer">
+
     <div id="sidebar">
         <h2>Veldkaart</h2>
 
@@ -220,10 +32,10 @@
         <button onclick="exportCSV()">Export CSV</button>
 
         <div id="filters">
+
             <div class="filter-section">
                 <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Type</span>
-                    <span>▼</span>
+                    <span>Type</span><span>▼</span>
                 </div>
                 <div class="filter-content">
                     <select id="filterType" multiple>
@@ -235,8 +47,7 @@
 
             <div class="filter-section">
                 <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Soorten</span>
-                    <span>▼</span>
+                    <span>Soorten</span><span>▼</span>
                 </div>
                 <div class="filter-content">
                     <select id="filterSpeciesMulti" multiple>
@@ -256,15 +67,14 @@
 
             <div class="filter-section">
                 <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Foto</span>
-                    <span>▼</span>
+                    <span>Foto</span><span>▼</span>
                 </div>
                 <div class="filter-content">
                     <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
                 </div>
             </div>
 
-            <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
+            <button onclick="resetFilters()">Reset filters</button>
         </div>
 
         <button id="infoBtn" onclick="showInfo()">ℹ️ Info</button>
@@ -284,14 +94,14 @@
             <span class="close-btn" onclick="closeForm()">×</span>
         </h3>
 
-        <label>Type:</label><br>
+        <label>Type:</label>
         <select id="type">
             <option value="Observatie">Observatie</option>
             <option value="Nest">Nest</option>
-        </select><br><br>
+        </select>
 
-        <label>Soort:</label><br>
-        <select id="species" required>
+        <label>Soort:</label>
+        <select id="species">
             <option value="Wilde Eend">Wilde Eend</option>
             <option value="Meerkoet">Meerkoet</option>
             <option value="Fuut">Fuut</option>
@@ -302,143 +112,184 @@
             <option value="Ekster">Ekster</option>
             <option value="Canadese Gans">Canadese Gans</option>
             <option value="Knobbelzwaan">Knobbelzwaan</option>
-        </select><br><br>
+        </select>
 
-        <label>Datum:</label><br>
-        <input type="date" id="date" required><br><br>
+        <label>Datum:</label>
+        <input type="date" id="date">
 
-        <label>Tijd:</label><br>
-        <input type="time" id="time" required><br><br>
+        <label>Tijd:</label>
+        <input type="time" id="time">
 
-        <label>Opmerking:</label><br>
-        <textarea id="comment" rows="3"></textarea><br><br>
+        <label>Opmerking:</label>
+        <textarea id="comment" rows="3"></textarea>
 
-        <label>Foto:</label><br>
-        <input type="file" id="photo" accept="image/*"><br><br>
-
-        <button onclick="saveMarker()">Opslaan</button>
-        <button onclick="closeForm()">Annuleren</button>
-    </div>
-</div>
-
-<div id="appContainer">
-    <div id="sidebar">
-        <h2>Veldkaart</h2>
-
-        <button onclick="toggleSidebar()">Verberg zijbalk</button>
-        <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
-        <button onclick="exportCSV()">Export CSV</button>
-
-        <div id="filters">
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Type</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <select id="filterType" multiple>
-                        <option value="Nest" selected>Nest</option>
-                        <option value="Observatie" selected>Observatie</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Soorten</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <select id="filterSpeciesMulti" multiple>
-                        <option value="Wilde Eend" selected>Wilde Eend</option>
-                        <option value="Meerkoet" selected>Meerkoet</option>
-                        <option value="Fuut" selected>Fuut</option>
-                        <option value="Blauwe Reiger" selected>Blauwe Reiger</option>
-                        <option value="Merel" selected>Merel</option>
-                        <option value="Huismus" selected>Huismus</option>
-                        <option value="Zwarte Kraai" selected>Zwarte Kraai</option>
-                        <option value="Ekster" selected>Ekster</option>
-                        <option value="Canadese Gans" selected>Canadese Gans</option>
-                        <option value="Knobbelzwaan" selected>Knobbelzwaan</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Foto</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
-                </div>
-            </div>
-
-            <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
-        </div>
-
-        <button id="infoBtn" onclick="showInfo()">ℹ️ Info</button>
-    </div>
-
-    <div id="map"></div>
-
-    <div id="crosshair">
-        <div id="crosshairCircle"></div>
-    </div>
-
-    <button id="addObsBtn" onclick="toggleAddMode()">+</button>
-
-    <div class="form-popup" id="form">
-        <h3>
-            Marker opslaan
-            <span class="close-btn" onclick="closeForm()">×</span>
-        </h3>
-
-        <label>Type:</label><br>
-        <select id="type">
-            <option value="Observatie">Observatie</option>
-            <option value="Nest">Nest</option>
-        </select><br><br>
-
-        <label>Soort:</label><br>
-        <select id="species" required>
-            <option value="Wilde Eend">Wilde Eend</option>
-            <option value="Meerkoet">Meerkoet</option>
-            <option value="Fuut">Fuut</option>
-            <option value="Blauwe Reiger">Blauwe Reiger</option>
-            <option value="Merel">Merel</option>
-            <option value="Huismus">Huismus</option>
-            <option value="Zwarte Kraai">Zwarte Kraai</option>
-            <option value="Ekster">Ekster</option>
-            <option value="Canadese Gans">Canadese Gans</option>
-            <option value="Knobbelzwaan">Knobbelzwaan</option>
-        </select><br><br>
-
-        <label>Datum:</label><br>
-        <input type="date" id="date" required><br><br>
-
-        <label>Tijd:</label><br>
-        <input type="time" id="time" required><br><br>
-
-        <label>Opmerking:</label><br>
-        <textarea id="comment" rows="3"></textarea><br><br>
-
-        <label>Foto:</label><br>
-        <input type="file" id="photo" accept="image/*"><br><br>
+        <label>Foto:</label>
+        <input type="file" id="photo" accept="image/*">
 
         <button onclick="saveMarker()">Opslaan</button>
         <button onclick="closeForm()">Annuleren</button>
     </div>
+
 </div>
 
-<script>
+<script src="app-core.js"></script>
+<script src="app-ui.js"></script>
+
+</body>
+</html>
+
+#part 2-------------------
+body {
+    margin: 0;
+    font-family: sans-serif;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Startup screen */
+#startupScreen {
+    position: fixed;
+    inset: 0;
+    background: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+}
+
+#startupScreen button {
+    background: #0078ff;
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    width: 260px;
+    margin-top: 10px;
+}
+
+/* Layout */
+#appContainer {
+    display: none;
+    height: 100vh;
+    overflow: hidden;
+}
+
+#sidebar {
+    width: 260px;
+    background: #f5f5f5;
+    border-right: 1px solid #ccc;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#map {
+    flex: 1;
+}
+
+/* Crosshair */
+#crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin-left: -20px;
+    margin-top: -20px;
+    z-index: 1100;
+    pointer-events: none;
+    display: none;
+}
+
+#crosshair::before,
+#crosshair::after {
+    content: "";
+    position: absolute;
+    background: rgba(0,0,0,0.7);
+}
+
+#crosshair::before {
+    width: 2px;
+    height: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#crosshair::after {
+    height: 2px;
+    width: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#crosshairCircle {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.7);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Add button */
+#addObsBtn {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #0078ff;
+    color: white;
+    border: none;
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1200;
+}
+
+#addObsBtn.cross-mode {
+    background: #27ae60;
+}
+
+/* Form popup */
+.form-popup {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    width: 90%;
+    max-width: 340px;
+    z-index: 1000;
+    display: none;
+}
+
+.form-popup h3 {
+    margin-top: 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+#PART # ----------------------------
 let map;
 let markers = [];
 let tempLatLng = null;
 let editingId = null;
 let addMode = false;
 
-let projectHandle = null; // The linked GeoJSON file
+let projectHandle = null;
 
 const centeredIcon = L.icon({
     iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
@@ -446,39 +297,27 @@ const centeredIcon = L.icon({
     iconAnchor: [12, 41]
 });
 
-/* -----------------------------------------------------------
-   PROJECT SYSTEM
------------------------------------------------------------ */
-
+/* PROJECT SYSTEM */
 async function startNewProject() {
-    let name = prompt("Projectnaam");
-    if (!name) name = "project";
+    let name = prompt("Projectnaam") || "project";
 
     projectHandle = await window.showSaveFilePicker({
         suggestedName: name + ".geojson",
-        types: [{
-            description: "GeoJSON",
-            accept: { "application/geo+json": [".geojson"] }
-        }]
+        types: [{ description: "GeoJSON", accept: { "application/geo+json": [".geojson"] } }]
     });
 
     localStorage.setItem("markers", "[]");
     await writeGeoJSON();
-
     startApp();
 }
 
 async function openExistingProject() {
     const [handle] = await window.showOpenFilePicker({
-        types: [{
-            description: "GeoJSON",
-            accept: { "application/geo+json": [".geojson"] }
-        }]
+        types: [{ description: "GeoJSON", accept: { "application/geo+json": [".geojson"] } }]
     });
 
     projectHandle = handle;
     await readGeoJSONIntoLocalStorage();
-
     startApp();
 }
 
@@ -490,10 +329,7 @@ function startApp() {
     setupFilterListeners();
 }
 
-/* -----------------------------------------------------------
-   FILE READ / WRITE
------------------------------------------------------------ */
-
+/* FILE READ/WRITE */
 async function writeGeoJSON() {
     if (!projectHandle) return;
 
@@ -508,7 +344,7 @@ async function readGeoJSONIntoLocalStorage() {
     const text = await file.text();
     const geojson = JSON.parse(text);
 
-    const importedMarkers = geojson.features.map(f => ({
+    const imported = geojson.features.map(f => ({
         id: f.properties.id,
         lat: f.geometry.coordinates[1],
         lng: f.geometry.coordinates[0],
@@ -520,22 +356,16 @@ async function readGeoJSONIntoLocalStorage() {
         photo: f.properties.photo
     }));
 
-    localStorage.setItem("markers", JSON.stringify(importedMarkers));
+    localStorage.setItem("markers", JSON.stringify(imported));
 }
 
-/* -----------------------------------------------------------
-   MAP INITIALIZATION
------------------------------------------------------------ */
-
+/* MAP */
 function initMap() {
     let normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
     map = L.map('map', { center: [52.3867, 4.9643], zoom: 15, layers: [normal] });
 }
 
-/* -----------------------------------------------------------
-   SAVE MARKER
------------------------------------------------------------ */
-
+/* SAVE MARKER */
 function saveMarker() {
     let type = document.getElementById("type").value;
     let species = document.getElementById("species").value;
@@ -552,11 +382,7 @@ function saveMarker() {
 
         if (editingId) {
             let idx = saved.findIndex(m => m.id === editingId);
-            saved[idx].type = type;
-            saved[idx].species = species;
-            saved[idx].date = date;
-            saved[idx].time = time;
-            saved[idx].comment = comment;
+            saved[idx] = { ...saved[idx], type, species, date, time, comment };
             if (file) saved[idx].photo = photoData;
         } else {
             saved.push({
@@ -570,7 +396,7 @@ function saveMarker() {
 
         localStorage.setItem("markers", JSON.stringify(saved));
         loadMarkers();
-        await writeGeoJSON(); // rewrite linked file
+        await writeGeoJSON();
         closeForm();
     };
 
@@ -578,10 +404,7 @@ function saveMarker() {
     else reader.onload({ target: { result: null } });
 }
 
-/* -----------------------------------------------------------
-   LOAD MARKERS
------------------------------------------------------------ */
-
+/* LOAD MARKERS */
 function loadMarkers() {
     let saved = JSON.parse(localStorage.getItem("markers") || "[]");
     markers.forEach(m => map.removeLayer(m.layer));
@@ -598,10 +421,7 @@ function loadMarkers() {
     applyFilters();
 }
 
-/* -----------------------------------------------------------
-   POPUP HTML
------------------------------------------------------------ */
-
+/* POPUP HTML */
 function makePopupHtml(m) {
     let html = `<b>${m.type}</b><br>${m.species}<br>${m.date} ${m.time}`;
     if (m.comment) html += `<br><i>${m.comment}</i>`;
@@ -611,22 +431,16 @@ function makePopupHtml(m) {
     return html;
 }
 
-/* -----------------------------------------------------------
-   DELETE MARKER
------------------------------------------------------------ */
-
+/* DELETE */
 function deleteMarker(id) {
     let saved = JSON.parse(localStorage.getItem("markers") || "[]");
     saved = saved.filter(m => m.id !== id);
     localStorage.setItem("markers", JSON.stringify(saved));
     loadMarkers();
-    writeGeoJSON(); // rewrite file
+    writeGeoJSON();
 }
 
-/* -----------------------------------------------------------
-   EDIT MARKER
------------------------------------------------------------ */
-
+/* EDIT */
 function editMarker(id) {
     let saved = JSON.parse(localStorage.getItem("markers") || "[]");
     let m = saved.find(x => x.id === id);
@@ -643,10 +457,7 @@ function editMarker(id) {
     document.getElementById("form").style.display = "block";
 }
 
-/* -----------------------------------------------------------
-   CSV EXPORT
------------------------------------------------------------ */
-
+/* CSV EXPORT */
 function exportCSV() {
     let saved = JSON.parse(localStorage.getItem("markers") || "[]");
     let csv = "lat,lng,type,species,date,time,comment\n";
@@ -661,10 +472,7 @@ function exportCSV() {
     a.click();
 }
 
-/* -----------------------------------------------------------
-   GEOJSON BUILDER
------------------------------------------------------------ */
-
+/* GEOJSON BUILDER */
 function markersToGeoJSON() {
     let saved = JSON.parse(localStorage.getItem("markers") || "[]");
 
@@ -689,10 +497,45 @@ function markersToGeoJSON() {
     };
 }
 
-/* -----------------------------------------------------------
-   FILTERS
------------------------------------------------------------ */
+#PART $________________________________________
+/* ADD MODE (FIXED) */
+function toggleAddMode() {
+    addMode = !addMode;
 
+    const btn = document.getElementById("addObsBtn");
+    const cross = document.getElementById("crosshair");
+
+    if (addMode) {
+        btn.classList.add("cross-mode");
+        cross.style.display = "block";
+
+        map.on("move", updateTempLatLng);
+        updateTempLatLng();
+
+        editingId = null;
+        document.getElementById("form").style.display = "block";
+
+    } else {
+        btn.classList.remove("cross-mode");
+        cross.style.display = "none";
+        map.off("move", updateTempLatLng);
+    }
+}
+
+function updateTempLatLng() {
+    tempLatLng = map.getCenter();
+}
+
+/* CLOSE FORM */
+function closeForm() {
+    document.getElementById("form").style.display = "none";
+    addMode = false;
+    document.getElementById("addObsBtn").classList.remove("cross-mode");
+    document.getElementById("crosshair").style.display = "none";
+    map.off("move", updateTempLatLng);
+}
+
+/* FILTERS */
 function setupFilterListeners() {
     document.getElementById("filterType").addEventListener("change", applyFilters);
     document.getElementById("filterSpeciesMulti").addEventListener("change", applyFilters);
@@ -702,117 +545,6 @@ function setupFilterListeners() {
 function resetFilters() {
     const typeSel = document.getElementById("filterType");
     for (let opt of typeSel.options) opt.selected = true;
-
-    const speciesSel = document.getElementById("filterSpeciesMulti");
-    for (let opt of speciesSel.options) opt.selected = true;
-
-    document.getElementById("filterPhoto").checked = false;
-    applyFilters();
-}
-
-function getSelectedValues(selectEl) {
-    let vals = [];
-    for (let opt of selectEl.options) {
-        if (opt.selected) vals.push(opt.value);
-    }
-    return vals;
-}
-
-function applyFilters() {
-    let typeSel = document.getElementById("filterType");
-    let speciesSel = document.getElementById("filterSpeciesMulti");
-    let onlyPhoto = document.getElementById("filterPhoto").checked;
-
-    let typesAllowed = getSelectedValues(typeSel);
-    let speciesAllowed = getSelectedValues(speciesSel);
-
-    markers.forEach(m => {
-        let d = m.data;
-        let visible = true;
-
-        if (!typesAllowed.includes(d.type)) visible = false;
-        if (!speciesAllowed.includes(d.species)) visible = false;
-        if (onlyPhoto && !d.photo) visible = false;
-
-        if (visible) {
-            if (!map.hasLayer(m.layer)) map.addLayer(m.layer);
-        } else {
-            if (map.hasLayer(m.layer)) map.removeLayer(m.layer);
-        }
-    });
-}
-
-/* -----------------------------------------------------------
-   LIVE GPS
------------------------------------------------------------ */
-
-let liveTracking = false;
-let liveMarker = null;
-let liveWatchID = null;
-
-function toggleLive() {
-    let btn = document.getElementById("liveBtn");
-
-    if (!liveTracking) {
-        liveTracking = true;
-        btn.textContent = "Live positie: AAN";
-
-        liveWatchID = navigator.geolocation.watchPosition(pos => {
-            let lat = pos.coords.latitude;
-            let lng = pos.coords.longitude;
-
-            if (!liveMarker) {
-                liveMarker = L.circleMarker([lat, lng], {
-                    radius: 6,
-                    color: "#3498db",
-                    weight: 3,
-                    fillColor: "#3498db",
-                    fillOpacity: 0.9
-                }).addTo(map);
-            } else {
-                liveMarker.setLatLng([lat, lng]);
-            }
-
-            map.setView([lat, lng]);
-        });
-    } else {
-        liveTracking = false;
-        btn.textContent = "Live positie: UIT";
-
-        if (liveWatchID !== null) {
-            navigator.geolocation.clearWatch(liveWatchID);
-            liveWatchID = null;
-        }
-    }
-}
-
-/* -----------------------------------------------------------
-   INFO POPUP
------------------------------------------------------------ */
-
-function showInfo() {
-    alert("Dit is jouw veldkaartproject. GeoJSON wordt automatisch bijgewerkt.");
-}
-
-/* -----------------------------------------------------------
-   CROSSHAIR MODE
------------------------------------------------------------ */
-
-function toggleFilterSection(headerEl) {
-    const content = headerEl.nextElementSibling;
-    if (!content) return;
-
-    if (content.style.display === "block") {
-        content.style.display = "none";
-        headerEl.querySelectorAll("span")[1].textContent = "▼";
-    } else {
-        content.style.display = "block";
-        headerEl.querySelectorAll("span")[1].textContent = "▲";
-    }
-}
-</script>
-</body>
-</html>
 
 
 
