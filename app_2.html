@@ -1,3 +1,4 @@
+#PART 1
 <!DOCTYPE html>
 <html>
 <head>
@@ -203,7 +204,10 @@
 
 <body>
 
-<!-- Startup screen -->
+<!-- ============================
+     PART 1 — STARTUP SCREEN
+     ============================ -->
+
 <div id="startupScreen">
     <h1>Welkom Luigi</h1>
     <p>Kies hoe je wilt beginnen</p>
@@ -211,115 +215,9 @@
     <button onclick="openExistingProject()">Bestaand project openen</button>
 </div>
 
-<div id="appContainer">
-    <div id="sidebar">
-        <h2>Veldkaart</h2>
-
-        <button onclick="toggleSidebar()">Verberg zijbalk</button>
-        <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
-        <button onclick="exportCSV()">Export CSV</button>
-
-        <div id="filters">
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Type</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <select id="filterType" multiple>
-                        <option value="Nest" selected>Nest</option>
-                        <option value="Observatie" selected>Observatie</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Soorten</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <select id="filterSpeciesMulti" multiple>
-                        <option value="Wilde Eend" selected>Wilde Eend</option>
-                        <option value="Meerkoet" selected>Meerkoet</option>
-                        <option value="Fuut" selected>Fuut</option>
-                        <option value="Blauwe Reiger" selected>Blauwe Reiger</option>
-                        <option value="Merel" selected>Merel</option>
-                        <option value="Huismus" selected>Huismus</option>
-                        <option value="Zwarte Kraai" selected>Zwarte Kraai</option>
-                        <option value="Ekster" selected>Ekster</option>
-                        <option value="Canadese Gans" selected>Canadese Gans</option>
-                        <option value="Knobbelzwaan" selected>Knobbelzwaan</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <div class="filter-header" onclick="toggleFilterSection(this)">
-                    <span>Foto</span>
-                    <span>▼</span>
-                </div>
-                <div class="filter-content">
-                    <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
-                </div>
-            </div>
-
-            <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
-        </div>
-
-        <button id="infoBtn" onclick="showInfo()">ℹ️ Info</button>
-    </div>
-
-    <div id="map"></div>
-
-    <div id="crosshair">
-        <div id="crosshairCircle"></div>
-    </div>
-
-    <button id="addObsBtn" onclick="toggleAddMode()">+</button>
-
-    <div class="form-popup" id="form">
-        <h3>
-            Marker opslaan
-            <span class="close-btn" onclick="closeForm()">×</span>
-        </h3>
-
-        <label>Type:</label><br>
-        <select id="type">
-            <option value="Observatie">Observatie</option>
-            <option value="Nest">Nest</option>
-        </select><br><br>
-
-        <label>Soort:</label><br>
-        <select id="species" required>
-            <option value="Wilde Eend">Wilde Eend</option>
-            <option value="Meerkoet">Meerkoet</option>
-            <option value="Fuut">Fuut</option>
-            <option value="Blauwe Reiger">Blauwe Reiger</option>
-            <option value="Merel">Merel</option>
-            <option value="Huismus">Huismus</option>
-            <option value="Zwarte Kraai">Zwarte Kraai</option>
-            <option value="Ekster">Ekster</option>
-            <option value="Canadese Gans">Canadese Gans</option>
-            <option value="Knobbelzwaan">Knobbelzwaan</option>
-        </select><br><br>
-
-        <label>Datum:</label><br>
-        <input type="date" id="date" required><br><br>
-
-        <label>Tijd:</label><br>
-        <input type="time" id="time" required><br><br>
-
-        <label>Opmerking:</label><br>
-        <textarea id="comment" rows="3"></textarea><br><br>
-
-        <label>Foto:</label><br>
-        <input type="file" id="photo" accept="image/*"><br><br>
-
-        <button onclick="saveMarker()">Opslaan</button>
-        <button onclick="closeForm()">Annuleren</button>
-    </div>
-</div>
+<!-- ============================
+     PART 1 — MAP + SIDEBAR + FORM
+     ============================ -->
 
 <div id="appContainer">
     <div id="sidebar">
@@ -430,6 +328,124 @@
         <button onclick="closeForm()">Annuleren</button>
     </div>
 </div>
+
+# PART 2----------------
+<!-- ============================
+     PART 2 — MAP + SIDEBAR + FORM
+     ============================ -->
+
+<div id="appContainer">
+    <div id="sidebar">
+        <h2>Veldkaart</h2>
+
+        <button onclick="toggleSidebar()">Verberg zijbalk</button>
+        <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
+        <button onclick="exportCSV()">Export CSV</button>
+
+        <div id="filters">
+            <div class="filter-section">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Type</span>
+                    <span>▼</span>
+                </div>
+                <div class="filter-content">
+                    <select id="filterType" multiple>
+                        <option value="Nest" selected>Nest</option>
+                        <option value="Observatie" selected>Observatie</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Soorten</span>
+                    <span>▼</span>
+                </div>
+                <div class="filter-content">
+                    <select id="filterSpeciesMulti" multiple>
+                        <option value="Wilde Eend" selected>Wilde Eend</option>
+                        <option value="Meerkoet" selected>Meerkoet</option>
+                        <option value="Fuut" selected>Fuut</option>
+                        <option value="Blauwe Reiger" selected>Blauwe Reiger</option>
+                        <option value="Merel" selected>Merel</option>
+                        <option value="Huismus" selected>Huismus</option>
+                        <option value="Zwarte Kraai" selected>Zwarte Kraai</option>
+                        <option value="Ekster" selected>Ekster</option>
+                        <option value="Canadese Gans" selected>Canadese Gans</option>
+                        <option value="Knobbelzwaan" selected>Knobbelzwaan</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-header" onclick="toggleFilterSection(this)">
+                    <span>Foto</span>
+                    <span>▼</span>
+                </div>
+                <div class="filter-content">
+                    <label><input type="checkbox" id="filterPhoto"> Alleen met foto</label>
+                </div>
+            </div>
+
+            <button style="margin-top:10px;" onclick="resetFilters()">Reset filters</button>
+        </div>
+
+        <button id="infoBtn" onclick="showInfo()">ℹ️ Info</button>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="crosshair">
+        <div id="crosshairCircle"></div>
+    </div>
+
+    <button id="addObsBtn" onclick="toggleAddMode()">+</button>
+
+    <div class="form-popup" id="form">
+        <h3>
+            Marker opslaan
+            <span class="close-btn" onclick="closeForm()">×</span>
+        </h3>
+
+        <label>Type:</label><br>
+        <select id="type">
+            <option value="Observatie">Observatie</option>
+            <option value="Nest">Nest</option>
+        </select><br><br>
+
+        <label>Soort:</label><br>
+        <select id="species" required>
+            <option value="Wilde Eend">Wilde Eend</option>
+            <option value="Meerkoet">Meerkoet</option>
+            <option value="Fuut">Fuut</option>
+            <option value="Blauwe Reiger">Blauwe Reiger</option>
+            <option value="Merel">Merel</option>
+            <option value="Huismus">Huismus</option>
+            <option value="Zwarte Kraai">Zwarte Kraai</option>
+            <option value="Ekster">Ekster</option>
+            <option value="Canadese Gans">Canadese Gans</option>
+            <option value="Knobbelzwaan">Knobbelzwaan</option>
+        </select><br><br>
+
+        <label>Datum:</label><br>
+        <input type="date" id="date" required><br><br>
+
+        <label>Tijd:</label><br>
+        <input type="time" id="time" required><br><br>
+
+        <label>Opmerking:</label><br>
+        <textarea id="comment" rows="3"></textarea><br><br>
+
+        <label>Foto:</label><br>
+        <input type="file" id="photo" accept="image/*"><br><br>
+
+        <button onclick="saveMarker()">Opslaan</button>
+        <button onclick="closeForm()">Annuleren</button>
+    </div>
+</div>
+<!-- ============================
+     PART 3 — PROJECT SYSTEM
+     ============================ -->
 
 <script>
 let map;
@@ -446,9 +462,8 @@ const centeredIcon = L.icon({
     iconAnchor: [12, 41]
 });
 
-<script>
 /* -----------------------------------------------------------
-   PROJECT SYSTEM
+   PROJECT SYSTEM — NEW PROJECT
 ----------------------------------------------------------- */
 
 async function startNewProject() {
@@ -469,6 +484,10 @@ async function startNewProject() {
     startApp();
 }
 
+/* -----------------------------------------------------------
+   PROJECT SYSTEM — OPEN EXISTING PROJECT
+----------------------------------------------------------- */
+
 async function openExistingProject() {
     const [handle] = await window.showOpenFilePicker({
         types: [{
@@ -483,6 +502,10 @@ async function openExistingProject() {
     startApp();
 }
 
+/* -----------------------------------------------------------
+   START APPLICATION AFTER PROJECT SELECTION
+----------------------------------------------------------- */
+
 function startApp() {
     document.getElementById("startupScreen").style.display = "none";
     document.getElementById("appContainer").style.display = "flex";
@@ -492,7 +515,7 @@ function startApp() {
 }
 
 /* -----------------------------------------------------------
-   FILE READ / WRITE
+   FILE WRITE — SAVE GEOJSON TO LINKED FILE
 ----------------------------------------------------------- */
 
 async function writeGeoJSON() {
@@ -503,6 +526,10 @@ async function writeGeoJSON() {
     await writable.write(JSON.stringify(geojson, null, 2));
     await writable.close();
 }
+
+/* -----------------------------------------------------------
+   FILE READ — LOAD GEOJSON INTO LOCALSTORAGE
+----------------------------------------------------------- */
 
 async function readGeoJSONIntoLocalStorage() {
     const file = await projectHandle.getFile();
@@ -532,6 +559,10 @@ function initMap() {
     let normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
     map = L.map('map', { center: [52.3867, 4.9643], zoom: 15, layers: [normal] });
 }
+
+<!-- ============================
+     PART 4 — MARKERS + FILTERS + GPS
+     ============================ */
 
 /* -----------------------------------------------------------
    SAVE MARKER
@@ -796,7 +827,7 @@ function showInfo() {
 }
 
 /* -----------------------------------------------------------
-   CROSSHAIR MODE
+   FILTER SECTION TOGGLE
 ----------------------------------------------------------- */
 
 function toggleFilterSection(headerEl) {
@@ -812,8 +843,13 @@ function toggleFilterSection(headerEl) {
     }
 }
 </script>
+
 </body>
 </html>
+
+
+
+
 
 
 
