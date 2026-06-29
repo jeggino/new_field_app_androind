@@ -2455,4 +2455,201 @@
       }).join("");
     }
 
+   /************************************************************
+     * UI helpers
+     ************************************************************/
+
+    function toggleSidebar() {
+      sidebar.classList.toggle("open");
+    }
+
+    function toggleFilters() {
+      filterPanel.classList.toggle("hidden");
+
+      const isVisible = !filterPanel.classList.contains("hidden");
+
+      toggleFiltersBtn.querySelector("span:first-child").textContent =
+        isVisible ? "Hide filters" : "Show filters";
+
+      toggleFiltersBtn.querySelector("span:last-child").textContent =
+        isVisible ? "▴" : "▾";
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+
+      window.clearTimeout(showToast._timeout);
+      showToast._timeout = window.setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2300);
+    }
+
+    function setNowDefaults() {
+      const now = new Date();
+
+      obsDate.value = toDateInputValue(now);
+      obsTime.value = toTimeInputValue(now);
+    }
+
+    function setGeometryNowDefaults() {
+      const now = new Date();
+
+      geometryDate.value = toDateInputValue(now);
+      geometryTime.value = toTimeInputValue(now);
+    }
+
+    function toDateInputValue(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+
+      return `${year}-${month}-${day}`;
+    }
+
+    function toTimeInputValue(date) {
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+
+      return `${hours}:${minutes}`;
+    }
+
     /************************************************************
+     * Species helpers
+     ************************************************************/
+
+    function populateSpeciesSelect(selectElement, group) {
+      const speciesList = speciesByGroup[group] || [];
+
+      selectElement.innerHTML = speciesList.map(species => {
+        return `<option value="${escapeHTML(species)}">${escapeHTML(species)}</option>`;
+      }).join("");
+    }
+
+    function populateAllSpeciesSelect(selectElement) {
+      const allSpecies = [
+        ...speciesByGroup.Bat,
+        ...speciesByGroup.Bird
+      ];
+
+      selectElement.innerHTML = allSpecies.map(species => {
+        return `<option value="${escapeHTML(species)}">${escapeHTML(species)}</option>`;
+      }).join("");
+    }
+
+    /************************************************************
+     * Map helpers
+     ************************************************************/
+
+    function fitToFeatures() {
+      const layers = [];
+
+      geojsonData.features.forEach(feature => {
+        if (!feature.geometry) return;
+
+        if (feature.geometry.type === "Point") {
+          const coords = feature.geometry.coordinates;
+
+          if (Array.isArray(coords) && coords.length >= 2) {
+            layers.push(L.marker([coords[1], coords[0]]));
+          }
+        }
+
+        if (feature.geometry.type === "Polygon") {
+          const rings = feature.geometry.coordinates;
+
+          if (Array.isArray(rings) && Array.isArray(rings[0])) {
+            const latLngs = rings[0].map(coord => [coord[1], coord[0]]);
+            layers.push(L.polygon(latLngs));
+          }
+        }
+
+        if (feature.geometry.type === "LineString") {
+          const coords = feature.geometry.coordinates;
+
+          if (Array.isArray(coords)) {
+            const latLngs = coords.map(coord => [coord[1], coord[0]]);
+            layers.push(L.polyline(latLngs));
+          }
+        }
+      });
+
+      if (!layers.length) return;
+
+      const group = L.featureGroup(layers);
+      map.fitBounds(group.getBounds(), {
+        padding: [35, 35],
+        maxZoom: 17
+      });
+    }
+
+    function colorFromSpecies(species) {
+      const palette = [
+        "#73508a",
+        "#2f738f",
+        "#c66e45",
+        "#6f9b78",
+        "#4059ad",
+        "#d7191c",
+        "#8d6b32",
+        "#1c6254",
+        "#984d31",
+        "#5a7d4f",
+        "#9b4f7a",
+        "#2d8f6f",
+        "#bf7d2f",
+        "#526a88"
+      ];
+
+      const text = String(species || "Unknown");
+      let hash = 0;
+
+      for (let i = 0; i < text.length; i++) {
+        hash = text.charCodeAt(i) + ((hash << 5) - hash);
+        hash = hash & hash;
+      }
+
+      return palette[Math.abs(hash) % palette.length];
+    }
+
+    /************************************************************
+     * General utilities
+     ************************************************************/
+
+    function createId() {
+      if (window.crypto && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+
+      return "feature-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "Unknown";
+
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return String(value);
+      }
+
+      return date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+  </script>
+</body>
+</html>
