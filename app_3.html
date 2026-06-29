@@ -3,203 +3,362 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Project Map Interface</title>
+
+  <title>Eco Field Observation App</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
 
   <style>
+    :root {
+      --forest: #244236;
+      --forest-dark: #162c24;
+      --sage: #8fae9b;
+      --sage-light: #dceade;
+      --cream: #f7f1e5;
+      --paper: #fffaf1;
+      --clay: #c97b5a;
+      --clay-dark: #a65e42;
+      --moss: #5f7f64;
+      --ink: #21302a;
+      --muted: #64746b;
+      --border: rgba(36, 66, 54, 0.16);
+      --shadow: 0 18px 50px rgba(21, 40, 32, 0.22);
+      --soft-shadow: 0 10px 28px rgba(21, 40, 32, 0.16);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --sidebar-width: 320px;
+    }
+
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
+      width: 100%;
+      height: 100%;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--cream);
       overflow: hidden;
-      background: #e5e7eb;
     }
 
-    /* =========================
-       MAIN APP LAYOUT
-    ========================= */
+    button,
+    input,
+    select,
+    textarea {
+      font-family: inherit;
+    }
 
-    .app {
+    button {
+      cursor: pointer;
+    }
+
+    #app {
       position: relative;
       width: 100vw;
       height: 100vh;
       overflow: hidden;
+      background: var(--cream);
     }
-
-    /* =========================
-       MAP AREA
-       Replace this with your real map container if needed
-    ========================= */
 
     #map {
       position: absolute;
       inset: 0;
-      background:
-        linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15)),
-        url("https://tile.openstreetmap.org/5/16/10.png");
-      background-size: cover;
-      background-position: center;
+      z-index: 1;
     }
 
-    .map-placeholder-text {
+    .leaflet-control-attribution {
+      font-size: 10px;
+    }
+
+    /* Initial project screen */
+
+    .start-screen {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 18px 26px;
-      background: rgba(255, 255, 255, 0.9);
-      border-radius: 14px;
-      color: #111827;
-      font-weight: 700;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      inset: 0;
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at top left, rgba(143, 174, 155, 0.45), transparent 35%),
+        radial-gradient(circle at bottom right, rgba(201, 123, 90, 0.24), transparent 38%),
+        linear-gradient(135deg, #eef4e9, #f9efe0);
+    }
+
+    .start-card {
+      width: min(720px, 100%);
+      background: rgba(255, 250, 241, 0.92);
+      border: 1px solid rgba(36, 66, 54, 0.16);
+      border-radius: 32px;
+      padding: 34px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .brand-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--forest), var(--moss));
+      color: white;
+      font-size: 28px;
+      box-shadow: 0 10px 22px rgba(36, 66, 54, 0.22);
+    }
+
+    .start-card h1 {
+      margin: 0;
+      color: var(--forest-dark);
+      font-size: clamp(28px, 4vw, 42px);
+      letter-spacing: -0.04em;
+    }
+
+    .start-card p {
+      color: var(--muted);
+      line-height: 1.6;
+      margin: 10px 0 0;
+      font-size: 16px;
+    }
+
+    .project-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 28px;
+    }
+
+    .project-action {
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 22px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.56);
+      box-shadow: var(--soft-shadow);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .project-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 36px rgba(21, 40, 32, 0.2);
+    }
+
+    .project-action strong {
+      display: block;
+      color: var(--forest-dark);
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .project-action span {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .project-action.primary {
+      background: linear-gradient(135deg, var(--forest), var(--moss));
+      color: white;
+    }
+
+    .project-action.primary strong,
+    .project-action.primary span {
+      color: white;
+    }
+
+    .project-note {
+      margin-top: 20px;
+      padding: 13px 16px;
+      border-radius: 16px;
+      background: rgba(143, 174, 155, 0.14);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Top app status */
+
+    .top-status {
+      position: absolute;
+      top: 18px;
+      left: 86px;
+      right: 18px;
+      z-index: 700;
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
       pointer-events: none;
     }
 
-    /* =========================
-       SIDEBAR
-    ========================= */
+    .status-pill {
+      pointer-events: auto;
+      max-width: 52vw;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(255, 250, 241, 0.92);
+      border: 1px solid var(--border);
+      box-shadow: var(--soft-shadow);
+      backdrop-filter: blur(12px);
+      color: var(--forest-dark);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: #4d9460;
+      border-radius: 999px;
+      box-shadow: 0 0 0 5px rgba(77, 148, 96, 0.16);
+    }
+
+    .clock-pill {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      padding: 10px 14px;
+      border-radius: 18px;
+      background: rgba(22, 44, 36, 0.88);
+      color: white;
+      box-shadow: var(--soft-shadow);
+      backdrop-filter: blur(12px);
+      min-width: 138px;
+    }
+
+    .clock-time {
+      font-weight: 800;
+      font-size: 20px;
+      letter-spacing: 0.03em;
+    }
+
+    .clock-date {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    /* Sidebar */
+
+    .sidebar-toggle {
+      position: absolute;
+      top: 18px;
+      left: 18px;
+      width: 50px;
+      height: 50px;
+      z-index: 1100;
+      border: none;
+      border-radius: 50%;
+      background: var(--forest);
+      color: white;
+      font-size: 24px;
+      box-shadow: var(--soft-shadow);
+      transition: background 0.18s ease, transform 0.18s ease;
+    }
+
+    .sidebar-toggle:hover {
+      background: var(--forest-dark);
+      transform: translateY(-1px);
+    }
 
     .sidebar {
       position: absolute;
       top: 0;
       left: 0;
-      width: 280px;
+      width: var(--sidebar-width);
       height: 100%;
-      z-index: 900;
-      background: #111827;
-      color: #ffffff;
-      padding: 74px 18px 20px;
-      box-shadow: 8px 0 24px rgba(0, 0, 0, 0.28);
-      transition: transform 0.25s ease;
-    }
-
-    .sidebar.hidden {
+      z-index: 1000;
       transform: translateX(-100%);
+      transition: transform 0.28s ease;
+      padding: 88px 18px 18px;
+      background: rgba(255, 250, 241, 0.94);
+      border-right: 1px solid var(--border);
+      box-shadow: 12px 0 40px rgba(21, 40, 32, 0.18);
+      backdrop-filter: blur(16px);
+      overflow-y: auto;
     }
 
-    .sidebar h2 {
-      margin: 0 0 20px;
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-section {
+      background: rgba(255, 255, 255, 0.58);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 8px 22px rgba(21, 40, 32, 0.08);
+    }
+
+    .sidebar-section h2,
+    .sidebar-section h3 {
+      margin: 0 0 12px;
+      color: var(--forest-dark);
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-section h2 {
       font-size: 22px;
     }
 
-    .sidebar button {
+    .sidebar-section h3 {
+      font-size: 16px;
+    }
+
+    .sidebar-button {
       width: 100%;
-      display: block;
-      margin-bottom: 10px;
+      border: none;
+      border-radius: 14px;
       padding: 12px 14px;
-      border: none;
-      border-radius: 10px;
-      background: #1f2937;
-      color: #ffffff;
-      font-size: 14px;
-      text-align: left;
-      cursor: pointer;
-    }
-
-    .sidebar button:hover {
-      background: #374151;
-    }
-
-    .sidebar-toggle-btn {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      z-index: 1200;
-      width: 44px;
-      height: 44px;
-      border: none;
-      border-radius: 12px;
-      background: #2563eb;
+      margin-bottom: 9px;
+      background: var(--forest);
       color: white;
-      font-size: 24px;
-      cursor: pointer;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-    }
-
-    .sidebar-toggle-btn:hover {
-      background: #1d4ed8;
-    }
-
-    /* =========================
-       DIGITAL CLOCK
-    ========================= */
-
-    .clock-box {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      z-index: 850;
-      min-width: 170px;
-      padding: 12px 18px;
-      border-radius: 16px;
-      background: rgba(17, 24, 39, 0.9);
-      color: #ffffff;
-      text-align: center;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-      backdrop-filter: blur(8px);
-    }
-
-    .clock-label {
-      font-size: 12px;
-      color: #cbd5e1;
-      margin-bottom: 4px;
-      letter-spacing: 0.5px;
-    }
-
-    .digital-clock {
-      font-size: 25px;
       font-weight: 800;
-      letter-spacing: 1px;
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .clock-date {
-      font-size: 12px;
-      color: #d1d5db;
-      margin-top: 4px;
+    .sidebar-button.secondary {
+      background: var(--sage-light);
+      color: var(--forest-dark);
     }
 
-    /* =========================
-       FILTER PANEL
-    ========================= */
-
-    .filter-panel-wrapper {
-      position: absolute;
-      top: 86px;
-      left: 306px;
-      z-index: 820;
-      width: 280px;
-      transition: left 0.25s ease;
+    .sidebar-button.danger {
+      background: #f4d4ca;
+      color: #7e3324;
     }
 
-    body.sidebar-collapsed .filter-panel-wrapper {
-      left: 16px;
-    }
-
-    .toggle-filters-btn {
-      width: 100%;
-      padding: 10px 12px;
-      background: #111827;
-      color: white;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 700;
-      margin-bottom: 8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+    .sidebar-button:last-child {
+      margin-bottom: 0;
     }
 
     .filter-panel {
-      background: rgba(255, 255, 255, 0.96);
-      border-radius: 16px;
-      padding: 14px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-      backdrop-filter: blur(8px);
-    }
-
-    .filter-panel.hidden {
-      display: none;
+      margin-top: 12px;
     }
 
     .filter-row {
@@ -208,681 +367,1388 @@
       margin-bottom: 12px;
     }
 
-    .filter-row:last-child {
-      margin-bottom: 0;
-    }
-
     .filter-row label {
-      font-size: 13px;
-      font-weight: 700;
-      color: #374151;
-      margin-bottom: 5px;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--forest-dark);
+      margin-bottom: 6px;
     }
 
     .filter-row input,
     .filter-row select {
-      height: 38px;
-      padding: 0 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 9px;
-      font-size: 14px;
-      background: white;
+      width: 100%;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--paper);
+      padding: 0 11px;
+      color: var(--ink);
+      outline: none;
     }
 
-    /* =========================
-       BOTTOM FORM
-    ========================= */
+    .filter-row input:focus,
+    .filter-row select:focus,
+    textarea:focus {
+      border-color: var(--sage);
+      box-shadow: 0 0 0 4px rgba(143, 174, 155, 0.16);
+    }
 
-    .bottom-form {
+    .observation-count {
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    /* Add observation button */
+
+    .add-observation-btn {
       position: absolute;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
+      right: 28px;
+      bottom: 28px;
       z-index: 800;
-
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      gap: 10px;
-
-      max-width: calc(100% - 40px);
-      padding: 12px 14px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.96);
-      box-shadow: 0 8px 26px rgba(0,0,0,0.24);
-      backdrop-filter: blur(8px);
-    }
-
-    .bottom-form input,
-    .bottom-form select {
-      height: 38px;
-      min-width: 140px;
-      padding: 0 10px;
-      border: 1px solid #d1d5db;
-      border-radius: 9px;
-      font-size: 14px;
-      background: white;
-    }
-
-    .bottom-form button {
-      height: 38px;
-      padding: 0 18px;
+      width: 72px;
+      height: 72px;
       border: none;
-      border-radius: 9px;
-      background: #2563eb;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--clay), var(--clay-dark));
       color: white;
-      font-weight: 700;
-      cursor: pointer;
+      font-size: 38px;
+      font-weight: 300;
+      box-shadow: 0 16px 38px rgba(166, 94, 66, 0.38);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .add-observation-btn:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 22px 48px rgba(166, 94, 66, 0.44);
+    }
+
+    .add-observation-btn.active {
+      background: var(--forest);
+      box-shadow: 0 16px 38px rgba(36, 66, 54, 0.38);
+    }
+
+    /* Crosshair */
+
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 760;
+      width: 34px;
+      height: 34px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .crosshair::before,
+    .crosshair::after {
+      content: "";
+      position: absolute;
+      background: var(--clay-dark);
+      box-shadow: 0 0 0 3px rgba(255, 250, 241, 0.78);
+      border-radius: 999px;
+    }
+
+    .crosshair::before {
+      width: 34px;
+      height: 3px;
+      top: 15.5px;
+      left: 0;
+    }
+
+    .crosshair::after {
+      width: 3px;
+      height: 34px;
+      left: 15.5px;
+      top: 0;
+    }
+
+    .capture-hint {
+      position: absolute;
+      top: calc(50% + 26px);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 760;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 250, 241, 0.94);
+      border: 1px solid var(--border);
+      color: var(--forest-dark);
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: var(--soft-shadow);
+      pointer-events: none;
       white-space: nowrap;
     }
 
-    .bottom-form button:hover {
-      background: #1d4ed8;
-    }
+    /* Observation form */
 
-    /* =========================
-       SAVE PROJECT PAGE / VIEW
-    ========================= */
-
-    .page {
-      display: none;
-    }
-
-    .page.active {
-      display: block;
-    }
-
-    .save-project-page {
+    .observation-form-panel {
       position: absolute;
-      inset: 0;
-      z-index: 1100;
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(6px);
-      padding: 70px 20px 20px;
-      overflow-y: auto;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      z-index: 780;
+      width: min(760px, calc(100% - 126px));
+      background: rgba(255, 250, 241, 0.96);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      padding: 16px;
+      backdrop-filter: blur(16px);
     }
 
-    .save-project-card {
-      max-width: 720px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+    .observation-form-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 12px;
     }
 
-    .save-project-card h2 {
-      margin-top: 0;
-      color: #111827;
+    .observation-form-header h3 {
+      margin: 0;
+      color: var(--forest-dark);
+      font-size: 18px;
+      letter-spacing: -0.03em;
     }
 
-    .save-form-grid {
+    .coordinates-small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .form-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      grid-template-columns: 150px 1fr 140px 120px;
+      gap: 10px;
+      align-items: end;
     }
 
-    .save-form-field {
+    .form-field {
       display: flex;
       flex-direction: column;
     }
 
-    .save-form-field.full {
-      grid-column: 1 / -1;
+    .form-field label {
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--forest-dark);
+      margin-bottom: 5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
-    .save-form-field label {
-      font-weight: 700;
-      font-size: 13px;
-      margin-bottom: 6px;
-      color: #374151;
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: white;
+      padding: 10px 11px;
+      outline: none;
+      color: var(--ink);
     }
 
-    .save-form-field input,
-    .save-form-field select,
-    .save-form-field textarea {
-      padding: 11px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
-      font-family: Arial, sans-serif;
-    }
-
-    .save-form-field textarea {
-      min-height: 100px;
+    .form-field textarea {
+      min-height: 44px;
       resize: vertical;
     }
 
-    .save-actions {
-      margin-top: 18px;
+    .form-field.comments {
+      grid-column: 1 / 4;
+    }
+
+    .form-actions {
       display: flex;
-      justify-content: flex-end;
-      gap: 10px;
+      gap: 8px;
+      align-items: stretch;
     }
 
-    .secondary-btn,
-    .primary-btn {
-      padding: 11px 18px;
+    .save-btn,
+    .cancel-btn {
       border: none;
-      border-radius: 10px;
-      font-weight: 700;
-      cursor: pointer;
+      border-radius: 13px;
+      padding: 11px 14px;
+      font-weight: 900;
+      white-space: nowrap;
     }
 
-    .secondary-btn {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
-    .primary-btn {
-      background: #2563eb;
+    .save-btn {
+      background: var(--forest);
       color: white;
     }
 
-    .primary-btn:hover {
-      background: #1d4ed8;
+    .cancel-btn {
+      background: var(--sage-light);
+      color: var(--forest-dark);
     }
 
-    /* =========================
-       DIALOG BOX
-    ========================= */
+    /* Dialog */
 
-    .info-dialog {
+    dialog {
       border: none;
-      border-radius: 18px;
+      border-radius: 26px;
       padding: 0;
-      width: min(560px, calc(100% - 32px));
-      box-shadow: 0 24px 70px rgba(0,0,0,0.38);
-      overflow: hidden;
+      width: min(640px, calc(100% - 28px));
+      box-shadow: var(--shadow);
+      background: var(--paper);
+      color: var(--ink);
     }
 
-    .info-dialog::backdrop {
-      background: rgba(0,0,0,0.46);
+    dialog::backdrop {
+      background: rgba(22, 44, 36, 0.45);
+      backdrop-filter: blur(5px);
     }
 
     .dialog-header {
+      padding: 18px 20px;
+      background: linear-gradient(135deg, var(--forest), var(--moss));
+      color: white;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #111827;
-      color: white;
-      padding: 16px 18px;
     }
 
-    .dialog-header h3 {
+    .dialog-header h2 {
       margin: 0;
-      font-size: 18px;
+      font-size: 20px;
+      letter-spacing: -0.02em;
     }
 
-    .dialog-close-btn {
-      background: transparent;
+    .dialog-close {
+      width: 36px;
+      height: 36px;
       border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.16);
       color: white;
-      font-size: 28px;
-      cursor: pointer;
-      line-height: 1;
+      font-size: 22px;
     }
 
-    .dialog-content {
-      padding: 18px;
-      color: #1f2937;
-      line-height: 1.5;
-      background: white;
+    .dialog-body {
+      padding: 20px;
+      line-height: 1.6;
+      color: var(--ink);
     }
 
-    .dialog-content p {
-      margin-top: 0;
+    .dialog-body ul {
+      margin-top: 8px;
+      padding-left: 22px;
     }
 
-    /* =========================
-       RESPONSIVE
-    ========================= */
+    .dialog-body li {
+      margin-bottom: 8px;
+    }
+
+    .edit-dialog-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .edit-dialog-grid .form-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 0 20px 20px;
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      top: 24px;
+      z-index: 2500;
+      transform: translateX(-50%) translateY(-20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.24s ease;
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(22, 44, 36, 0.94);
+      color: white;
+      box-shadow: var(--soft-shadow);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Leaflet marker popup styling */
+
+    .popup-title {
+      font-weight: 900;
+      color: var(--forest-dark);
+      margin-bottom: 6px;
+    }
+
+    .popup-line {
+      margin: 3px 0;
+      font-size: 13px;
+      color: var(--ink);
+    }
+
+    .popup-actions {
+      display: flex;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    .popup-actions button {
+      border: none;
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .popup-edit {
+      background: var(--sage-light);
+      color: var(--forest-dark);
+    }
+
+    .popup-delete {
+      background: #f5d0c5;
+      color: #843b2c;
+    }
+
+    /* Responsive */
 
     @media (max-width: 900px) {
-      .filter-panel-wrapper {
-        left: 16px;
-        top: 76px;
-      }
-
-      .clock-box {
-        top: 16px;
-        right: 16px;
-      }
-
-      .bottom-form {
-        flex-wrap: wrap;
-        justify-content: center;
-        width: calc(100% - 32px);
-      }
-
-      .bottom-form input,
-      .bottom-form select,
-      .bottom-form button {
-        flex: 1 1 140px;
-      }
-
-      .save-form-grid {
+      .project-actions {
         grid-template-columns: 1fr;
+      }
+
+      .top-status {
+        left: 78px;
+      }
+
+      .status-pill {
+        max-width: 58vw;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .form-field.comments {
+        grid-column: 1 / -1;
+      }
+
+      .form-actions {
+        grid-column: 1 / -1;
+      }
+
+      .observation-form-panel {
+        width: calc(100% - 110px);
+        left: 18px;
+        right: 92px;
+        transform: none;
       }
     }
 
-    @media (max-width: 600px) {
-      .clock-box {
-        top: 68px;
-        right: 16px;
-        min-width: 140px;
+    @media (max-width: 640px) {
+      :root {
+        --sidebar-width: 292px;
       }
 
-      .digital-clock {
-        font-size: 20px;
+      .start-card {
+        padding: 24px;
+      }
+
+      .top-status {
+        top: 78px;
+        left: 14px;
+        right: 14px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .status-pill {
+        max-width: 100%;
+      }
+
+      .clock-pill {
+        align-items: flex-start;
       }
 
       .sidebar {
-        width: 250px;
+        width: min(292px, 88vw);
       }
 
-      .filter-panel-wrapper {
-        width: calc(100% - 32px);
-        top: 145px;
+      .observation-form-panel {
+        left: 12px;
+        right: 12px;
+        width: auto;
+        bottom: 104px;
       }
 
-      .map-placeholder-text {
-        font-size: 13px;
-        padding: 12px 16px;
+      .form-grid,
+      .edit-dialog-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+
+      .add-observation-btn {
+        right: 20px;
+        bottom: 20px;
+        width: 66px;
+        height: 66px;
       }
     }
   </style>
 </head>
 
 <body>
-  <div class="app">
+  <div id="app">
+    <div id="map"></div>
 
-    <!-- MAP -->
-    <div id="map">
-      <div class="map-placeholder-text">
-        Map Area
+    <!-- Initial screen -->
+    <section id="startScreen" class="start-screen">
+      <div class="start-card">
+        <div class="brand-row">
+          <div class="brand-icon">☘</div>
+          <div>
+            <h1>Eco Field Notebook</h1>
+            <p>
+              Collect bat and bird observations directly on the map.
+              Start a fresh GeoJSON project or continue working from an existing file.
+            </p>
+          </div>
+        </div>
+
+        <div class="project-actions">
+          <button id="createProjectBtn" class="project-action primary">
+            <strong>Create new project</strong>
+            <span>Create an empty GeoJSON file and choose where to save it.</span>
+          </button>
+
+          <button id="openProjectBtn" class="project-action">
+            <strong>Open existing project</strong>
+            <span>Load a GeoJSON project from your device.</span>
+          </button>
+        </div>
+
+        <div class="project-note">
+          Best experience: use Microsoft Edge or Chrome so the app can update the same GeoJSON file directly.
+          Other browsers may download an updated copy after every change.
+        </div>
+
+        <input id="fallbackFileInput" class="hidden" type="file" accept=".geojson,.json,application/geo+json,application/json" />
       </div>
-    </div>
+    </section>
 
-    <!-- SIDEBAR TOGGLE BUTTON OUTSIDE SIDEBAR -->
-    <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Toggle sidebar">
-      ×
-    </button>
+    <!-- Sidebar toggle -->
+    <button id="sidebarToggle" class="sidebar-toggle" title="Toggle sidebar">☰</button>
 
-    <!-- SIDEBAR -->
+    <!-- Sidebar -->
     <aside id="sidebar" class="sidebar">
-      <h2>Menu</h2>
-      <button id="newProjectBtn">New Project</button>
-      <button id="projectsBtn">Projects</button>
-      <button id="infoBtn">Information</button>
-      <button id="settingsBtn">Settings</button>
-    </aside>
+      <div class="sidebar-section">
+        <h2>Field Menu</h2>
+        <button id="toggleFiltersBtn" class="sidebar-button secondary">
+          <span>Show filters</span>
+          <span>▾</span>
+        </button>
 
-    <!-- DIGITAL CLOCK -->
-    <div id="clockBox" class="clock-box">
-      <div class="clock-label">Current Time</div>
-      <div id="digitalClock" class="digital-clock">--:--:--</div>
-      <div id="clockDate" class="clock-date">Loading date...</div>
-    </div>
+        <button id="instructionsBtn" class="sidebar-button">
+          <span>Instructions</span>
+          <span>?</span>
+        </button>
 
-    <!-- FILTERS -->
-    <div class="filter-panel-wrapper">
-      <button id="toggleFiltersBtn" class="toggle-filters-btn">
-        Hide Filters
-      </button>
+        <button id="downloadCopyBtn" class="sidebar-button secondary">
+          <span>Download GeoJSON copy</span>
+          <span>⬇</span>
+        </button>
 
-      <div id="filterPanel" class="filter-panel">
+        <button id="closeProjectBtn" class="sidebar-button danger">
+          <span>Close project</span>
+          <span>×</span>
+        </button>
+      </div>
+
+      <div id="filterPanel" class="sidebar-section filter-panel hidden">
+        <h3>Observation Filters</h3>
+
         <div class="filter-row">
-          <label for="filterStatus">Status</label>
-          <select id="filterStatus">
-            <option value="">All statuses</option>
-            <option value="planning">Planning</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-            <option value="paused">Paused</option>
+          <label for="filterGroup">Observation group</label>
+          <select id="filterGroup">
+            <option value="">All</option>
+            <option value="Bat">Bats only</option>
+            <option value="Bird">Birds only</option>
           </select>
         </div>
 
         <div class="filter-row">
+          <label for="filterSpecies">Species contains</label>
+          <input id="filterSpecies" type="text" placeholder="e.g. pipistrelle, owl" />
+        </div>
+
+        <div class="filter-row">
           <label for="filterDate">Date</label>
-          <input type="date" id="filterDate" />
+          <input id="filterDate" type="date" />
         </div>
 
         <div class="filter-row">
-          <label for="filterLocation">Location</label>
-          <input type="text" id="filterLocation" placeholder="Enter location" />
+          <label for="filterComment">Comment contains</label>
+          <input id="filterComment" type="text" placeholder="Search comments" />
         </div>
 
-        <div class="filter-row">
-          <label for="filterKeyword">Keyword</label>
-          <input type="text" id="filterKeyword" placeholder="Search project" />
+        <button id="clearFiltersBtn" class="sidebar-button secondary">
+          <span>Clear filters</span>
+          <span>↺</span>
+        </button>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Project Summary</h3>
+        <div id="summaryText" class="observation-count">
+          No project loaded yet.
         </div>
+      </div>
+    </aside>
+
+    <!-- Top status -->
+    <div class="top-status">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span id="projectStatusText">Choose or create a GeoJSON project</span>
+      </div>
+
+      <div class="clock-pill">
+        <div id="clockTime" class="clock-time">--:--:--</div>
+        <div id="clockDate" class="clock-date">--</div>
       </div>
     </div>
 
-    <!-- BOTTOM FILLABLE FORM -->
-    <form id="bottomForm" class="bottom-form">
-      <input type="text" id="quickProjectName" placeholder="Project name" />
-      <input type="text" id="quickLocation" placeholder="Location" />
-      <input type="date" id="quickDate" />
+    <!-- Crosshair capture mode -->
+    <div id="crosshair" class="crosshair hidden"></div>
+    <div id="captureHint" class="capture-hint hidden">
+      Move the map so the cross is on the observation location
+    </div>
 
-      <select id="quickStatus">
-        <option value="">Status</option>
-        <option value="planning">Planning</option>
-        <option value="active">Active</option>
-        <option value="completed">Completed</option>
-        <option value="paused">Paused</option>
-      </select>
+    <!-- Add observation button -->
+    <button id="addObservationBtn" class="add-observation-btn hidden" title="Add observation">+</button>
 
-      <button type="submit">Save</button>
-    </form>
-
-    <!-- SAVE PROJECT PAGE -->
-    <section id="saveProjectPage" class="page save-project-page">
-      <div class="save-project-card">
-        <h2>Save New Project</h2>
-
-        <form id="saveProjectForm">
-          <div class="save-form-grid">
-            <div class="save-form-field">
-              <label for="saveProjectName">Project Name</label>
-              <input type="text" id="saveProjectName" placeholder="Enter project name" />
-            </div>
-
-            <div class="save-form-field">
-              <label for="saveProjectStatus">Status</label>
-              <select id="saveProjectStatus">
-                <option value="">Select status</option>
-                <option value="planning">Planning</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="paused">Paused</option>
-              </select>
-            </div>
-
-            <div class="save-form-field">
-              <label for="saveProjectLocation">Location</label>
-              <input type="text" id="saveProjectLocation" placeholder="Enter location" />
-            </div>
-
-            <div class="save-form-field">
-              <label for="saveProjectDate">Date</label>
-              <input type="date" id="saveProjectDate" />
-            </div>
-
-            <div class="save-form-field full">
-              <label for="saveProjectDescription">Description</label>
-              <textarea id="saveProjectDescription" placeholder="Project details"></textarea>
-            </div>
-          </div>
-
-          <div class="save-actions">
-            <button type="button" id="cancelSaveProjectBtn" class="secondary-btn">
-              Back to Map
-            </button>
-            <button type="submit" class="primary-btn">
-              Save Project
-            </button>
-          </div>
-        </form>
+    <!-- Observation form -->
+    <section id="observationFormPanel" class="observation-form-panel hidden">
+      <div class="observation-form-header">
+        <h3>New observation</h3>
+        <div id="currentCoordinates" class="coordinates-small">Lat --, Lng --</div>
       </div>
+
+      <form id="observationForm">
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="obsGroup">Group</label>
+            <select id="obsGroup" required>
+              <option value="Bat">Bat</option>
+              <option value="Bird">Bird</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="obsSpecies">Species</label>
+            <select id="obsSpecies" required></select>
+          </div>
+
+          <div class="form-field">
+            <label for="obsDate">Date</label>
+            <input id="obsDate" type="date" required />
+          </div>
+
+          <div class="form-field">
+            <label for="obsTime">Time</label>
+            <input id="obsTime" type="time" required />
+          </div>
+
+          <div class="form-field comments">
+            <label for="obsComments">Comments</label>
+            <textarea id="obsComments" placeholder="Behaviour, weather, count, habitat, confidence..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="save-btn" type="submit">Save observation</button>
+            <button id="cancelObservationBtn" class="cancel-btn" type="button">Cancel</button>
+          </div>
+        </div>
+      </form>
     </section>
 
-    <!-- INFORMATION DIALOG -->
-    <dialog id="infoDialog" class="info-dialog">
+    <!-- Instructions dialog -->
+    <dialog id="instructionsDialog">
       <div class="dialog-header">
-        <h3 id="dialogTitle">Information</h3>
-        <button id="closeDialogBtn" class="dialog-close-btn">×</button>
+        <h2>How to use the app</h2>
+        <button class="dialog-close" data-close-dialog="instructionsDialog">×</button>
       </div>
-
-      <div id="dialogContent" class="dialog-content">
-        Information will appear here.
+      <div class="dialog-body">
+        <ul>
+          <li><strong>Create new project</strong> starts an empty GeoJSON FeatureCollection.</li>
+          <li><strong>Open existing project</strong> loads a GeoJSON file from your device.</li>
+          <li>Use the circular <strong>+</strong> button to start adding an observation.</li>
+          <li>A cross appears in the center of the map. Move the map so the cross is exactly where the observation belongs.</li>
+          <li>Choose whether the observation is a <strong>bat</strong> or a <strong>bird</strong>, select the species, date, time, and add comments.</li>
+          <li>Click an observation marker to <strong>edit</strong> or <strong>delete</strong> it.</li>
+          <li>The app asks for confirmation before editing or deleting an observation.</li>
+          <li>Whenever you add, edit, or delete, the GeoJSON is updated. If direct file saving is unavailable, an updated copy is downloaded.</li>
+        </ul>
       </div>
     </dialog>
 
+    <!-- Edit dialog -->
+ s="dialog-header">
+        <h2>Edit observation</h2>
+        <button class="dialog-close" data-close-dialog="editDialog">×</button>
+      </div>
+
+      <form id="editObservationForm">
+        <div class="dialog-body">
+          <input id="editFeatureId" type="hidden" />
+
+          <div class="edit-dialog-grid">
+            <div class="form-field">
+              <label for="editGroup">Group</label>
+              <select id="editGroup" required>
+                <option value="Bat">Bat</option>
+                <option value="Bird">Bird</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="editSpecies">Species</label>
+              <select id="editSpecies" required></select>
+            </div>
+
+            <div class="form-field">
+              <label for="editDate">Date</label>
+              <input id="editDate" type="date" required />
+            </div>
+
+            <div class="form-field">
+              <label for="editTime">Time</label>
+              <input id="editTime" type="time" required />
+            </div>
+
+            <div class="form-field full">
+              <label for="editComments">Comments</label>
+              <textarea id="editComments"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="dialog-footer">
+          <button type="button" class="cancel-btn" data-close-dialog="editDialog">Cancel</button>
+          <button type="submit" class="save-btn">Confirm edit</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="toast" class="toast">Saved</div>
   </div>
 
+  <!-- Leaflet JS -->
+  https://unpkg.com/leaflet@1.9.4/dist/leaflet.jsscript>
+
   <script>
-    /* =========================
-       DIGITAL CLOCK
-    ========================= */
+    /************************************************************
+     * Species lists
+     ************************************************************/
 
-    function updateClock() {
-      const clockElement = document.getElementById("digitalClock");
-      const dateElement = document.getElementById("clockDate");
+    const speciesByGroup = {
+      Bat: [
+        "Common pipistrelle",
+        "Soprano pipistrelle",
+        "Nathusius' pipistrelle",
+        "Serotine bat",
+        "Noctule bat",
+        "Brown long-eared bat",
+        "Daubenton's bat",
+        "Whiskered bat",
+        "Natterer's bat",
+        "Bat species unknown"
+      ],
+      Bird: [
+        "Blackbird",
+        "Robin",
+        "Great tit",
+        "Blue tit",
+        "House sparrow",
+        "Barn swallow",
+        "Common swift",
+        "Grey heron",
+        "Buzzard",
+        "Kestrel",
+        "Tawny owl",
+        "Bird species unknown"
+      ]
+    };
 
-      if (!clockElement || !dateElement) return;
+    /************************************************************
+     * State
+     ************************************************************/
 
-      const now = new Date();
+    let map;
+    let geojsonData = createEmptyGeoJSON();
+    let projectFileHandle = null;
+    let projectFileName = "eco-field-project.geojson";
+    let markerLayer = L.layerGroup();
+    let captureMode = false;
 
-      const time = now.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-      });
+    const supportsFileSystemAccess =
+      "showSaveFilePicker" in window &&
+      "showOpenFilePicker" in window;
 
-      const date = now.toLocaleDateString([], {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric"
-      });
+    /************************************************************
+     * DOM elements
+     ************************************************************/
 
-      clockElement.textContent = time;
-      dateElement.textContent = date;
-    }
-
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    /* =========================
-       SIDEBAR TOGGLE
-    ========================= */
+    const startScreen = document.getElementById("startScreen");
+    const createProjectBtn = document.getElementById("createProjectBtn");
+    const openProjectBtn = document.getElementById("openProjectBtn");
+    const fallbackFileInput = document.getElementById("fallbackFileInput");
 
     const sidebar = document.getElementById("sidebar");
-    const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
-
-    sidebarToggleBtn.addEventListener("click", function () {
-      sidebar.classList.toggle("hidden");
-
-      const isHidden = sidebar.classList.contains("hidden");
-
-      sidebarToggleBtn.textContent = isHidden ? "☰" : "×";
-      document.body.classList.toggle("sidebar-collapsed", isHidden);
-    });
-
-    /* =========================
-       FILTER TOGGLE
-    ========================= */
-
+    const sidebarToggle = document.getElementById("sidebarToggle");
     const toggleFiltersBtn = document.getElementById("toggleFiltersBtn");
     const filterPanel = document.getElementById("filterPanel");
+    const instructionsBtn = document.getElementById("instructionsBtn");
+    const instructionsDialog = document.getElementById("instructionsDialog");
+    const downloadCopyBtn = document.getElementById("downloadCopyBtn");
+    const closeProjectBtn = document.getElementById("closeProjectBtn");
 
-    toggleFiltersBtn.addEventListener("click", function () {
-      filterPanel.classList.toggle("hidden");
+    const addObservationBtn = document.getElementById("addObservationBtn");
+    const crosshair = document.getElementById("crosshair");
+    const captureHint = document.getElementById("captureHint");
+    const observationFormPanel = document.getElementById("observationFormPanel");
+    const observationForm = document.getElementById("observationForm");
+    const cancelObservationBtn = document.getElementById("cancelObservationBtn");
+    const currentCoordinates = document.getElementById("currentCoordinates");
 
-      const isHidden = filterPanel.classList.contains("hidden");
-      toggleFiltersBtn.textContent = isHidden ? "Show Filters" : "Hide Filters";
-    });
+    const obsGroup = document.getElementById("obsGroup");
+    const obsSpecies = document.getElementById("obsSpecies");
+    const obsDate = document.getElementById("obsDate");
+    const obsTime = document.getElementById("obsTime");
+    const obsComments = document.getElementById("obsComments");
 
-    /* =========================
-       DIALOG BOX
-    ========================= */
+    const editDialog = document.getElementById("editDialog");
+    const editObservationForm = document.getElementById("editObservationForm");
+    const editFeatureId = document.getElementById("editFeatureId");
+    const editGroup = document.getElementById("editGroup");
+    const editSpecies = document.getElementById("editSpecies");
+    const editDate = document.getElementById("editDate");
+    const editTime = document.getElementById("editTime");
+    const editComments = document.getElementById("editComments");
 
-    const infoDialog = document.getElementById("infoDialog");
-    const dialogTitle = document.getElementById("dialogTitle");
-    const dialogContent = document.getElementById("dialogContent");
-    const closeDialogBtn = document.getElementById("closeDialogBtn");
+    const filterGroup = document.getElementById("filterGroup");
+    const filterSpecies = document.getElementById("filterSpecies");
+    const filterDate = document.getElementById("filterDate");
+    const filterComment = document.getElementById("filterComment");
+    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
 
-    function showInfoDialog(title, content) {
-      dialogTitle.textContent = title;
-      dialogContent.innerHTML = content;
-      infoDialog.showModal();
+    const projectStatusText = document.getElementById("projectStatusText");
+    const summaryText = document.getElementById("summaryText");
+    const toast = document.getElementById("toast");
+
+    /************************************************************
+     * App startup
+     ************************************************************/
+
+    initializeMap();
+    initializeClock();
+    populateSpeciesSelect(obsSpecies, "Bat");
+    populateSpeciesSelect(editSpecies, "Bat");
+    setNowDefaults();
+
+    /************************************************************
+     * Map
+     ************************************************************/
+
+    function initializeMap() {
+      map = L.map("map", {
+        zoomControl: false
+      }).setView([52.442, 4.829], 12);
+
+      L.control.zoom({
+        position: "bottomleft"
+      }).addTo(map);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+      }).addTo(map);
+
+      markerLayer.addTo(map);
+
+      map.on("move", updateCaptureCoordinates);
+      map.on("zoom", updateCaptureCoordinates);
     }
 
-    closeDialogBtn.addEventListener("click", function () {
-      infoDialog.close();
-    });
+    /************************************************************
+     * Project handling
+     ************************************************************/
 
-    infoDialog.addEventListener("click", function (event) {
-      const rect = infoDialog.getBoundingClientRect();
+    function createEmptyGeoJSON() {
+      return {
+        type: "FeatureCollection",
+        name: "Eco Field Project",
+        createdWith: "Eco Field Notebook",
+        features: []
+      };
+    }
 
-      const clickedOutside =
-        event.clientX < rect.left ||
-        event.clientX > rect.right ||
-        event.clientY < rect.top ||
-        event.clientY > rect.bottom;
+    createProjectBtn.addEventListener("click", async function () {
+      geojsonData = createEmptyGeoJSON();
+      projectFileName = "eco-field-project.geojson";
 
-      if (clickedOutside) {
-        infoDialog.close();
+      if (supportsFileSystemAccess) {
+        try {
+          projectFileHandle = await window.showSaveFilePicker({
+            suggestedName: projectFileName,
+            types: [
+              {
+                description: "GeoJSON file",
+                accept: {
+                  "application/geo+json": [".geojson"],
+                  "application/json": [".json"]
+                }
+              }
+            ]
+          });
+
+          projectFileName = projectFileHandle.name || projectFileName;
+          await saveProjectToDisk(false);
+          openProjectInterface();
+          showToast("New GeoJSON project created");
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            alert("Could not create the project file.");
+            console.error(error);
+          }
+        }
+      } else {
+        projectFileHandle = null;
+        downloadGeoJSON();
+        openProjectInterface();
+        showToast("Project created. Updated copies will download automatically.");
       }
     });
 
-    /* =========================
-       NEW PROJECT BEHAVIOR
-       Goes directly to save page.
-       No prompt for project name.
-    ========================= */
+    openProjectBtn.addEventListener("click", async function () {
+      if (supportsFileSystemAccess) {
+        try {
+          const handles = await window.showOpenFilePicker({
+            multiple: false,
+            types: [
+              {
+                description: "GeoJSON file",
+                accept: {
+                  "application/geo+json": [".geojson"],
+                  "application/json": [".json"]
+                }
+              }
+            ]
+          });
 
-    const newProjectBtn = document.getElementById("newProjectBtn");
-    const saveProjectPage = document.getElementById("saveProjectPage");
-    const cancelSaveProjectBtn = document.getElementById("cancelSaveProjectBtn");
-
-    newProjectBtn.addEventListener("click", function () {
-      saveProjectPage.classList.add("active");
+          projectFileHandle = handles[0];
+          const file = await projectFileHandle.getFile();
+          projectFileName = file.name || "eco-field-project.geojson";
+          const text = await file.text();
+          loadGeoJSONText(text);
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            alert("Could not open the selected GeoJSON file.");
+            console.error(error);
+          }
+        }
+      } else {
+        fallbackFileInput.click();
+      }
     });
 
-    cancelSaveProjectBtn.addEventListener("click", function () {
-      saveProjectPage.classList.remove("active");
+    fallbackFileInput.addEventListener("change", async function () {
+      const file = fallbackFileInput.files[0];
+      if (!file) return;
+
+      projectFileHandle = null;
+      projectFileName = file.name || "eco-field-project.geojson";
+
+      const text = await file.text();
+      loadGeoJSONText(text);
+      fallbackFileInput.value = "";
     });
 
-    /* =========================
-       MENU BUTTONS
-    ========================= */
+    function loadGeoJSONText(text) {
+      try {
+        const parsed = JSON.parse(text);
 
-    document.getElementById("projectsBtn").addEventListener("click", function () {
-      showInfoDialog(
-        "Projects",
-        `
-          <p>Your project list can be shown here.</p>
-          <p>This is displayed in a dialog box instead of covering the map permanently.</p>
-        `
-      );
-    });
+        if (!parsed || parsed.type !== "FeatureCollection" || !Array.isArray(parsed.features)) {
+          throw new Error("The file is not a valid GeoJSON FeatureCollection.");
+        }
 
-    document.getElementById("infoBtn").addEventListener("click", function () {
-      showInfoDialog(
-        "Information",
-        `
-          <p>This interface includes:</p>
-          <ul>
-            <li>A digital clock in the top-right corner.</li>
-            <li>A bottom fillable project form.</li>
-            <li>Separate-row filters with hide/show control.</li>
-            <li>A sidebar that can be hidden and shown again.</li>
-            <li>Information displayed inside dialog boxes.</li>
-          </ul>
-        `
-      );
-    });
-
-    document.getElementById("settingsBtn").addEventListener("click", function () {
-      showInfoDialog(
-        "Settings",
-        `
-          <p>Settings can be added here.</p>
-        `
-      );
-    });
-
-    /* =========================
-       BOTTOM QUICK FORM SAVE
-    ========================= */
-
-    const bottomForm = document.getElementById("bottomForm");
-
-    bottomForm.addEventListener("submit", function (event) {
-      event.preventDefault();
-
-      const projectName = document.getElementById("quickProjectName").value.trim();
-      const location = document.getElementById("quickLocation").value.trim();
-      const date = document.getElementById("quickDate").value;
-      const status = document.getElementById("quickStatus").value;
-
-      showInfoDialog(
-        "Project Saved",
-        `
-          <p><strong>Project Name:</strong> ${projectName || "Not provided"}</p>
-          <p><strong>Location:</strong> ${location || "Not provided"}</p>
-          <p><strong>Date:</strong> ${date || "Not provided"}</p>
-          <p><strong>Status:</strong> ${status || "Not provided"}</p>
-        `
-      );
-
-      bottomForm.reset();
-    });
-
-    /* =========================
-       SAVE PROJECT PAGE FORM
-    ========================= */
-
-    const saveProjectForm = document.getElementById("saveProjectForm");
-
-    saveProjectForm.addEventListener("submit", function (event) {
-      event.preventDefault();
-
-      const projectName = document.getElementById("saveProjectName").value.trim();
-      const location = document.getElementById("saveProjectLocation").value.trim();
-      const date = document.getElementById("saveProjectDate").value;
-      const status = document.getElementById("saveProjectStatus").value;
-      const description = document.getElementById("saveProjectDescription").value.trim();
-
-      saveProjectPage.classList.remove("active");
-
-      showInfoDialog(
-        "New Project Saved",
-        `
-          <p><strong>Project Name:</strong> ${projectName || "Not provided"}</p>
-          <p><strong>Location:</strong> ${location || "Not provided"}</p>
-          <p><strong>Date:</strong> ${date || "Not provided"}</p>
-          <p><strong>Status:</strong> ${status || "Not provided"}</p>
-          <p><strong>Description:</strong> ${description || "Not provided"}</p>
-        `
-      );
-
-      saveProjectForm.reset();
-    });
-
-    /* =========================
-       FILTER CHANGE EXAMPLE
-    ========================= */
-
-    const filterInputs = [
-      document.getElementById("filterStatus"),
-      document.getElementById("filterDate"),
-      document.getElementById("filterLocation"),
-      document.getElementById("filterKeyword")
-    ];
-
-    filterInputs.forEach(function (input) {
-      input.addEventListener("change", function () {
-        console.log("Filters changed:", {
-          status: document.getElementById("filterStatus").value,
-          date: document.getElementById("filterDate").value,
-          location: document.getElementById("filterLocation").value,
-          keyword: document.getElementById("filterKeyword").value
+        parsed.features.forEach(feature => {
+          if (!feature.properties) feature.properties = {};
+          if (!feature.properties.id) feature.properties.id = createId();
         });
+
+        geojsonData = parsed;
+        openProjectInterface();
+        renderMarkers();
+        fitToFeatures();
+        showToast("GeoJSON project loaded");
+      } catch (error) {
+        alert("The selected file could not be read as a valid GeoJSON FeatureCollection.");
+        console.error(error);
+      }
+    }
+
+    function openProjectInterface() {
+      startScreen.classList.add("hidden");
+      addObservationBtn.classList.remove("hidden");
+      projectStatusText.textContent = `Working on ${projectFileName}`;
+      updateSummary();
+      renderMarkers();
+    }
+
+    async function saveProjectToDisk(showSavedToast = true) {
+      geojsonData.updatedAt = new Date().toISOString();
+
+      const content = JSON.stringify(geojsonData, null, 2);
+
+      if (projectFileHandle && "createWritable" in projectFileHandle) {
+        try {
+          const writable = await projectFileHandle.createWritable();
+          await writable.write(content);
+          await writable.close();
+
+          if (showSavedToast) showToast("GeoJSON file updated");
+          return;
+        } catch (error) {
+          console.error(error);
+          alert("Direct saving failed. An updated copy will be downloaded instead.");
+          downloadGeoJSON();
+          return;
+        }
+      }
+
+      downloadGeoJSON();
+
+      if (showSavedToast) {
+        showToast("Updated GeoJSON copy downloaded");
+      }
+    }
+
+    function downloadGeoJSON() {
+      const content = JSON.stringify(geojsonData, null, 2);
+      const blob = new Blob([content], {
+        type: "application/geo+json"
       });
 
-      input.addEventListener("keyup", function () {
-        console.log("Filters changed:", {
-          status: document.getElementById("filterStatus").value,
-          date: document.getElementById("filterDate").value,
-          location: document.getElementById("filterLocation").value,
-          keyword: document.getElementById("filterKeyword").value
+      const safeName = projectFileName.endsWith(".geojson") || projectFileName.endsWith(".json")
+        ? projectFileName
+        : "eco-field-project.geojson";
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = safeName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    downloadCopyBtn.addEventListener("click", downloadGeoJSON);
+
+    closeProjectBtn.addEventListener("click", function () {
+      const confirmed = confirm("Close this project? Make sure your latest GeoJSON file has been saved.");
+      if (!confirmed) return;
+
+      geojsonData = createEmptyGeoJSON();
+      projectFileHandle = null;
+      projectFileName = "eco-field-project.geojson";
+      markerLayer.clearLayers();
+      startScreen.classList.remove("hidden");
+      addObservationBtn.classList.add("hidden");
+      closeCaptureMode();
+      projectStatusText.textContent = "Choose or create a GeoJSON project";
+      updateSummary();
+    });
+
+    /************************************************************
+     * Add observation
+     ************************************************************/
+
+    addObservationBtn.addEventListener("click", function () {
+      if (captureMode) {
+        closeCaptureMode();
+      } else {
+        openCaptureMode();
+      }
+    });
+
+    function openCaptureMode() {
+      captureMode = true;
+      addObservationBtn.classList.add("active");
+      addObservationBtn.textContent = "×";
+      crosshair.classList.remove("hidden");
+      captureHint.classList.remove("hidden");
+      observationFormPanel.classList.remove("hidden");
+      setNowDefaults();
+      updateCaptureCoordinates();
+    }
+
+    function closeCaptureMode() {
+      captureMode = false;
+      addObservationBtn.classList.remove("active");
+      addObservationBtn.textContent = "+";
+      crosshair.classList.add("hidden");
+      captureHint.classList.add("hidden");
+      observationFormPanel.classList.add("hidden");
+      observationForm.reset();
+      populateSpeciesSelect(obsSpecies, "Bat");
+      obsGroup.value = "Bat";
+      setNowDefaults();
+    }
+
+    cancelObservationBtn.addEventListener("click", closeCaptureMode);
+
+    obsGroup.addEventListener("change", function () {
+      populateSpeciesSelect(obsSpecies, obsGroup.value);
+    });
+
+    observationForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const center = map.getCenter();
+
+      const feature = {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [
+            Number(center.lng.toFixed(7)),
+            Number(center.lat.toFixed(7))
+          ]
+        },
+        properties: {
+          id: createId(),
+          group: obsGroup.value,
+          species: obsSpecies.value,
+          date: obsDate.value,
+          time: obsTime.value,
+          comments: obsComments.value.trim(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      };
+
+      geojsonData.features.push(feature);
+
+      await saveProjectToDisk();
+      renderMarkers();
+      updateSummary();
+      closeCaptureMode();
+    });
+
+    function updateCaptureCoordinates() {
+      if (!captureMode) return;
+
+      const center = map.getCenter();
+      currentCoordinates.textContent =
+        `Lat ${center.lat.toFixed(6)}, Lng ${center.lng.toFixed(6)}`;
+    }
+
+    /************************************************************
+     * Markers, filtering, popup actions
+     ************************************************************/
+
+    function renderMarkers() {
+      markerLayer.clearLayers();
+
+      const filteredFeatures = getFilteredFeatures();
+
+      filteredFeatures.forEach(feature => {
+        if (!feature.geometry || feature.geometry.type !== "Point") return;
+
+        const coords = feature.geometry.coordinates;
+        if (!Array.isArray(coords) || coords.length < 2) return;
+
+        const lng = coords[0];
+        const lat = coords[1];
+
+        const marker = L.circleMarker([lat, lng], {
+          radius: 9,
+          color: feature.properties.group === "Bat" ? "#6b4a7c" : "#2f6f88",
+          weight: 3,
+          fillColor: feature.properties.group === "Bat" ? "#9b7bb0" : "#7fb6c9",
+          fillOpacity: 0.82
         });
+
+        marker.bindPopup(createPopupHTML(feature));
+        marker.addTo(markerLayer);
+      });
+
+      updateSummary();
+    }
+
+    function createPopupHTML(feature) {
+      const props = feature.properties || {};
+      const species = escapeHTML(props.species || "Unknown species");
+      const group = escapeHTML(props.group || "Unknown group");
+      const date = escapeHTML(props.date || "No date");
+      const time = escapeHTML(props.time || "No time");
+      const comments = escapeHTML(props.comments || "No comments");
+      const id = escapeHTML(props.id);
+
+      return `
+        <div class="popup-title">${group}: ${species}</div>
+        <div class="popup-line"><strong>Date:</strong> ${date}</div>
+        <div class="popup-line"><strong>Time:</strong> ${time}</div>
+        <div class="popup-line"><strong>Comments:</strong> ${comments}</div>
+        <div class="popup-actions">
+          <button class="popup-edit" onclick="openEditObservation('${id}')">Edit</button>
+          <button class="popup-delete" onclick="deleteObservation('${id}')">Delete</button>
+        </div>
+      `;
+    }
+
+    function getFilteredFeatures() {
+      const groupValue = filterGroup.value;
+      const speciesValue = filterSpecies.value.trim().toLowerCase();
+      const dateValue = filterDate.value;
+      const commentValue = filterComment.value.trim().toLowerCase();
+
+      return geojsonData.features.filter(feature => {
+        const props = feature.properties || {};
+        const groupMatch = !groupValue || props.group === groupValue;
+        const speciesMatch = !speciesValue || String(props.species || "").toLowerCase().includes(speciesValue);
+        const dateMatch = !dateValue || props.date === dateValue;
+        const commentMatch = !commentValue || String(props.comments || "").toLowerCase().includes(commentValue);
+
+        return groupMatch && speciesMatch && dateMatch && commentMatch;
+      });
+    }
+
+    function fitToFeatures() {
+      const points = geojsonData.features
+        .filter(f => f.geometry && f.geometry.type === "Point")
+        .map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]]);
+
+      if (points.length === 1) {
+        map.setView(points[0], 15);
+      }
+
+      if (points.length > 1) {
+        map.fitBounds(points, {
+          padding: [40, 40]
+        });
+      }
+    }
+
+    window.openEditObservation = function (id) {
+      const feature = findFeatureById(id);
+      if (!feature) return;
+
+      const props = feature.properties || {};
+
+      editFeatureId.value = id;
+      editGroup.value = props.group || "Bat";
+      populateSpeciesSelect(editSpecies, editGroup.value);
+      editSpecies.value = props.species || editSpecies.options[0]?.value || "";
+      editDate.value = props.date || "";
+      editTime.value = props.time || "";
+      editComments.value = props.comments || "";
+
+      editDialog.showModal();
+    };
+
+    editGroup.addEventListener("change", function () {
+      populateSpeciesSelect(editSpecies, editGroup.value);
+    });
+
+    editObservationForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const confirmed = confirm("Are you sure you want to edit this observation and update the GeoJSON file?");
+      if (!confirmed) return;
+
+      const feature = findFeatureById(editFeatureId.value);
+      if (!feature) return;
+
+      feature.properties.group = editGroup.value;
+      feature.properties.species = editSpecies.value;
+      feature.properties.date = editDate.value;
+      feature.properties.time = editTime.value;
+      feature.properties.comments = editComments.value.trim();
+      feature.properties.updatedAt = new Date().toISOString();
+
+      editDialog.close();
+
+      await saveProjectToDisk();
+      renderMarkers();
+      updateSummary();
+    });
+
+    window.deleteObservation = async function (id) {
+      const confirmed = confirm("Are you sure you want to delete this observation and update the GeoJSON file?");
+      if (!confirmed) return;
+
+      geojsonData.features = geojsonData.features.filter(feature => {
+        return feature.properties && feature.properties.id !== id;
+      });
+
+      await saveProjectToDisk();
+      renderMarkers();
+      updateSummary();
+    };
+
+    function findFeatureById(id) {
+      return geojsonData.features.find(feature => {
+        return feature.properties && feature.properties.id === id;
+      });
+    }
+
+    /************************************************************
+     * Sidebar and filters
+     ************************************************************/
+
+    sidebarToggle.addEventListener("click", function () {
+      sidebar.classList.toggle("open");
+      sidebarToggle.textContent = sidebar.classList.contains("open") ? "×" : "☰";
+    });
+
+    toggleFiltersBtn.addEventListener("click", function () {
+      const isHidden = filterPanel.classList.toggle("hidden");
+      toggleFiltersBtn.querySelector("span:first-child").textContent =
+        isHidden ? "Show filters" : "Hide filters";
+      toggleFiltersBtn.querySelector("span:last-child").textContent =
+        isHidden ? "▾" : "▴";
+    });
+
+    instructionsBtn.addEventListener("click", function () {
+      instructionsDialog.showModal();
+    });
+
+    document.querySelectorAll("[data-close-dialog]").forEach(button => {
+      button.addEventListener("click", function () {
+        const dialogId = button.getAttribute("data-close-dialog");
+        document.getElementById(dialogId).close();
       });
     });
+
+    [filterGroup, filterSpecies, filterDate, filterComment].forEach(input => {
+      input.addEventListener("input", renderMarkers);
+      input.addEventListener("change", renderMarkers);
+    });
+
+    clearFiltersBtn.addEventListener("click", function () {
+      filterGroup.value = "";
+      filterSpecies.value = "";
+      filterDate.value = "";
+      filterComment.value = "";
+      renderMarkers();
+    });
+
+    /************************************************************
+     * Helpers
+     ************************************************************/
+
+    function populateSpeciesSelect(selectElement, group) {
+      selectElement.innerHTML = "";
+
+      speciesByGroup[group].forEach(species => {
+        const option = document.createElement("option");
+        option.value = species;
+        option.textContent = species;
+        selectElement.appendChild(option);
+      });
+    }
+
+    function setNowDefaults() {
+      const now = new Date();
+
+      const date = now.toISOString().slice(0, 10);
+      const time = now.toTimeString().slice(0, 5);
+
+      obsDate.value = date;
+      obsTime.value = time;
+    }
+
+    function createId() {
+      if ("crypto" in window && "randomUUID" in crypto) {
+        return crypto.randomUUID();
+      }
+
+      return "obs-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+    }
+
+    function updateSummary() {
+      const total = geojsonData.features.length;
+      const bats = geojsonData.features.filter(f => f.properties?.group === "Bat").length;
+      const birds = geojsonData.features.filter(f => f.properties?.group === "Bird").length;
+      const visible = getFilteredFeatures().length;
+
+      summaryText.innerHTML = `
+        <strong>${total}</strong> total observations<br>
+        <strong>${bats}</strong> bat observations<br>
+        <strong>${birds}</strong> bird observations<br>
+        <strong>${visible}</strong> visible after filters
+      `;
+    }
+
+    function initializeClock() {
+      function updateClock() {
+        const now = new Date();
+
+        document.getElementById("clockTime").textContent =
+          now.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit"
+          });
+
+        document.getElementById("clockDate").textContent =
+          now.toLocaleDateString([], {
+            weekday: "short",
+            day: "numeric",
+            month: "short"
+          });
+      }
+
+      updateClock();
+      setInterval(updateClock, 1000);
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2200);
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
   </script>
 </body>
 </html>
