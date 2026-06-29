@@ -76,8 +76,6 @@
       display: none !important;
     }
 
-    /* START SCREEN */
-
     .start-screen {
       position: absolute;
       inset: 0;
@@ -189,8 +187,6 @@
       line-height: 1.5;
     }
 
-    /* SIDEBAR */
-
     .sidebar-toggle {
       position: absolute;
       top: 18px;
@@ -301,10 +297,6 @@
       color: #253b8d;
     }
 
-    .sidebar-button:last-child {
-      margin-bottom: 0;
-    }
-
     .filter-row {
       display: flex;
       flex-direction: column;
@@ -338,8 +330,6 @@
       margin: 8px 0 0;
     }
 
-    /* GPS BUTTON */
-
     .gps-btn {
       position: absolute;
       left: 18px;
@@ -362,12 +352,6 @@
       color: white;
     }
 
-    .gps-btn:hover {
-      transform: translateY(-3px) scale(1.02);
-    }
-
-    /* ADD BUTTON */
-
     .add-observation-btn {
       position: absolute;
       right: 28px;
@@ -382,18 +366,11 @@
       font-size: 40px;
       font-weight: 300;
       box-shadow: 0 18px 42px rgba(152, 77, 49, 0.4);
-      transition: transform 0.18s ease;
-    }
-
-    .add-observation-btn:hover {
-      transform: translateY(-3px) scale(1.02);
     }
 
     .add-observation-btn.active {
       background: var(--forest);
     }
-
-    /* CROSSHAIR */
 
     .crosshair {
       position: absolute;
@@ -453,7 +430,6 @@
 
     .draw-hint {
       top: 22px;
-      pointer-events: auto;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -476,8 +452,6 @@
       background: #f4d4ca;
       color: #7e3324;
     }
-
-    /* OBSERVATION FORM */
 
     .observation-form-panel {
       position: absolute;
@@ -581,8 +555,6 @@
       color: var(--forest);
     }
 
-    /* DIALOGS */
-
     dialog {
       border: none;
       border-radius: 28px;
@@ -656,8 +628,6 @@
       justify-content: flex-end;
       gap: 10px;
     }
-
-    /* SUMMARY DIALOG CHARTS */
 
     .summary-stats {
       display: grid;
@@ -794,13 +764,6 @@
       color: #843b2c;
     }
 
-    .leaflet-control-layers {
-      border-radius: 14px;
-      overflow: hidden;
-      box-shadow: var(--soft-shadow);
-      border: 1px solid var(--border);
-    }
-
     @media (max-width: 900px) {
       .project-actions {
         grid-template-columns: 1fr;
@@ -876,7 +839,6 @@
 
       .gps-btn {
         left: 18px;
-        right: auto;
         bottom: 92px;
         width: 54px;
         height: 54px;
@@ -951,7 +913,6 @@
     <aside id="sidebar" class="sidebar">
       <div class="sidebar-section">
         <h2>Field Menu</h2>
-
         <div id="projectNameBox" class="project-name-box">
           No project loaded
           <span>Choose or create a GeoJSON project</span>
@@ -1113,8 +1074,8 @@
           <li>Use the map layer button to switch between street map and satellite map.</li>
           <li>Use the sidebar drawing tools to add a red research area, observation area, or foraging route.</li>
           <li>Research areas are red outlines with no fill.</li>
-          <li>Observation areas can be saved as <strong>Foraging area</strong> or <strong>Pair area</strong>, with species, date, time, and comments.</li>
-          <li>Foraging routes also include species, date, time, and comments.</li>
+          <li>Observation areas can be saved as <strong>Foraging area</strong> or <strong>Pair area</strong>.</li>
+          <li>Foraging routes include species, date, time, and comments.</li>
           <li>Different species are automatically shown with different colors.</li>
           <li>Use the <strong>Project Summary</strong> button to open charts and project statistics.</li>
           <li>Click a feature on the map to edit or delete it.</li>
@@ -1245,10 +1206,6 @@
   </script>
 
   <script>
-    /************************************************************
-     * Species
-     ************************************************************/
-
     const speciesByGroup = {
       Bat: [
         "Common pipistrelle",
@@ -1278,10 +1235,6 @@
       ]
     };
 
-    /************************************************************
-     * State
-     ************************************************************/
-
     let map;
     let markerLayer;
     let drawingLayer;
@@ -1303,12 +1256,7 @@
     let userAccuracyCircle = null;
 
     const supportsFileSystemAccess =
-      "showSaveFilePicker" in window &&
-      "showOpenFilePicker" in window;
-
-    /************************************************************
-     * Elements
-     ************************************************************/
+      "showSaveFilePicker" in window && "showOpenFilePicker" in window;
 
     const startScreen = document.getElementById("startScreen");
     const createProjectBtn = document.getElementById("createProjectBtn");
@@ -1381,13 +1329,9 @@
 
     const toast = document.getElementById("toast");
 
-    /************************************************************
-     * Start
-     ************************************************************/
-
     document.addEventListener("DOMContentLoaded", function () {
       if (!window.L) {
-        alert("Leaflet could not load. Please check your internet connection because the map library is loaded from a CDN.");
+        alert("Leaflet could not load. Please check your internet connection.");
         return;
       }
 
@@ -1400,10 +1344,6 @@
       attachEvents();
       updateProjectLabels(false);
     });
-
-    /************************************************************
-     * Init
-     ************************************************************/
 
     function initializeMap() {
       map = L.map("map", {
@@ -1462,7 +1402,7 @@
       sidebarToggle.addEventListener("click", toggleSidebar);
       projectSummaryBtn.addEventListener("click", openProjectSummary);
       toggleFiltersBtn.addEventListener("click", toggleFilters);
-      instructionsBtn.addEventListener("click", () => instructionsDialog.showModal());
+      instructionsBtn.addEventListener("click", () => safeShowDialog(instructionsDialog));
       closeProjectBtn.addEventListener("click", closeProject);
 
       addObservationBtn.addEventListener("click", toggleCaptureMode);
@@ -1494,7 +1434,8 @@
       document.querySelectorAll("[data-close-dialog]").forEach(button => {
         button.addEventListener("click", function () {
           const dialogId = button.getAttribute("data-close-dialog");
-          document.getElementById(dialogId).close();
+          const dialog = document.getElementById(dialogId);
+          if (dialog && dialog.open) dialog.close();
         });
       });
 
@@ -1512,9 +1453,14 @@
       });
     }
 
-    /************************************************************
-     * Project handling
-     ************************************************************/
+    function safeShowDialog(dialog) {
+      if (!dialog) return;
+      if (typeof dialog.showModal === "function") {
+        dialog.showModal();
+      } else {
+        alert("Your browser does not fully support dialogs. Please use a recent version of Chrome or Edge.");
+      }
+    }
 
     function createEmptyGeoJSON() {
       return {
@@ -1554,7 +1500,9 @@
         } catch (error) {
           if (error.name !== "AbortError") {
             console.error(error);
-            alert("Could not create the GeoJSON file.");
+            alert("Could not create the GeoJSON file. A download copy will be created instead.");
+            downloadGeoJSON();
+            openProjectInterface();
           }
         }
       } else {
@@ -1589,7 +1537,8 @@
         } catch (error) {
           if (error.name !== "AbortError") {
             console.error(error);
-            alert("Could not open the selected GeoJSON file.");
+            alert("Could not open the selected GeoJSON file. Try the fallback file picker.");
+            fallbackFileInput.click();
           }
         }
       } else {
@@ -1650,6 +1599,10 @@
       gpsBtn.classList.remove("hidden");
       updateProjectLabels(true);
       renderAllFeatures();
+
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 100);
     }
 
     function closeProject() {
@@ -1746,10 +1699,6 @@
         .replace(/\.geojson$/i, "")
         .replace(/\.json$/i, "");
     }
-
-    /************************************************************
-     * GPS / current location
-     ************************************************************/
 
     function goToCurrentLocation() {
       if (!navigator.geolocation) {
@@ -1856,10 +1805,6 @@
       }
     }
 
-    /************************************************************
-     * Observation capture
-     ************************************************************/
-
     function toggleCaptureMode() {
       if (captureMode) {
         closeCaptureMode();
@@ -1941,10 +1886,6 @@
       renderAllFeatures();
       closeCaptureMode();
     }
-
-    /************************************************************
-     * Drawing polygons and lines
-     ************************************************************/
 
     function startDrawing(label, geometryType) {
       closeCaptureMode();
@@ -2081,7 +2022,7 @@
       geometrySubtype.value = "Foraging area";
       geometryComments.value = "";
 
-      geometryMetaDialog.showModal();
+      safeShowDialog(geometryMetaDialog);
     }
 
     async function saveGeometryWithMetadata(event) {
@@ -2129,10 +2070,6 @@
 
       if (showMessage) showToast("Drawing cancelled");
     }
-
-    /************************************************************
-     * Render features
-     ************************************************************/
 
     function renderAllFeatures() {
       if (!markerLayer || !drawingLayer) return;
@@ -2267,7 +2204,7 @@
 
     function createPointPopupHTML(feature) {
       const props = feature.properties || {};
-      const id = escapeHTML(props.id || "");
+      const id = escapeAttribute(props.id || "");
 
       return `
         <div class="popup-title">${escapeHTML(props.group || "Observation")}: ${escapeHTML(props.species || "Unknown species")}</div>
@@ -2284,7 +2221,7 @@
 
     function createGeometryPopupHTML(feature) {
       const props = feature.properties || {};
-      const id = escapeHTML(props.id || "");
+      const id = escapeAttribute(props.id || "");
 
       const title = props.subtype || props.name || props.featureType || feature.geometry.type;
 
@@ -2303,10 +2240,6 @@
       `;
     }
 
-    /************************************************************
-     * Edit/delete
-     ************************************************************/
-
     window.openEditObservation = function (id) {
       const feature = findFeatureById(id);
       if (!feature || !feature.properties || feature.geometry?.type !== "Point") return;
@@ -2322,7 +2255,7 @@
       editTime.value = props.time || "";
       editComments.value = props.comments || "";
 
-      editDialog.showModal();
+      safeShowDialog(editDialog);
     };
 
     async function saveEditedObservation(event) {
@@ -2365,13 +2298,9 @@
       });
     }
 
-    /************************************************************
-     * Project summary dialog
-     ************************************************************/
-
     function openProjectSummary() {
       renderProjectSummary();
-      summaryDialog.showModal();
+      safeShowDialog(summaryDialog);
     }
 
     function renderProjectSummary() {
@@ -2445,7 +2374,7 @@
 
         return `
           <div class="chart-row">
-            <div class="chart-label" title="${escapeHTML(label)}">${escapeHTML(label)}</div>
+            <div class="chart-label" title="${escapeAttribute(label)}">${escapeHTML(label)}</div>
             <div class="chart-track">
               <div class="chart-bar" style="width:${width}%; background:${color};"></div>
             </div>
@@ -2454,10 +2383,6 @@
         `;
       }).join("");
     }
-
-   /************************************************************
-     * UI helpers
-     ************************************************************/
 
     function toggleSidebar() {
       sidebar.classList.toggle("open");
@@ -2514,15 +2439,11 @@
       return `${hours}:${minutes}`;
     }
 
-    /************************************************************
-     * Species helpers
-     ************************************************************/
-
     function populateSpeciesSelect(selectElement, group) {
       const speciesList = speciesByGroup[group] || [];
 
       selectElement.innerHTML = speciesList.map(species => {
-        return `<option value="${escapeHTML(species)}">${escapeHTML(species)}</option>`;
+        return `<option value="${escapeAttribute(species)}">${escapeHTML(species)}</option>`;
       }).join("");
     }
 
@@ -2533,13 +2454,9 @@
       ];
 
       selectElement.innerHTML = allSpecies.map(species => {
-        return `<option value="${escapeHTML(species)}">${escapeHTML(species)}</option>`;
+        return `<option value="${escapeAttribute(species)}">${escapeHTML(species)}</option>`;
       }).join("");
     }
-
-    /************************************************************
-     * Map helpers
-     ************************************************************/
 
     function fitToFeatures() {
       const layers = [];
@@ -2612,10 +2529,6 @@
       return palette[Math.abs(hash) % palette.length];
     }
 
-    /************************************************************
-     * General utilities
-     ************************************************************/
-
     function createId() {
       if (window.crypto && crypto.randomUUID) {
         return crypto.randomUUID();
@@ -2631,6 +2544,10 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    function escapeAttribute(value) {
+      return escapeHTML(value).replace(/`/g, "&#096;");
     }
 
     function formatDateTime(value) {
