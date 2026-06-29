@@ -1,1098 +1,888 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Field Marker App</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Map Interface</title>
 
-    <!-- Leaflet CSS/JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-    <style>
-        body {
-            margin: 0;
-            font-family: sans-serif;
-            height: 100vh;
-            overflow: hidden;
-        }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+      background: #e5e7eb;
+    }
 
-        /* Startup screen */
-        #startupScreen {
-            position: fixed;
-            inset: 0;
-            background: #f5f5f5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 5000;
-            text-align: center;
-            padding: 20px;
-        }
+    /* =========================
+       MAIN APP LAYOUT
+    ========================= */
 
-        #startupScreen button {
-            background: #0078ff;
-            color: white;
-            border: none;
-            padding: 14px 20px;
-            border-radius: 8px;
-            font-size: 18px;
-            cursor: pointer;
-            width: 260px;
-            margin-top: 10px;
-        }
+    .app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
 
-        #startupScreen button:hover {
-            background: #005fcc;
-        }
+    /* =========================
+       MAP AREA
+       Replace this with your real map container if needed
+    ========================= */
 
-        /* Main layout */
-        #appContainer {
-            display: none;
-            height: 100vh;
-            overflow: hidden;
-            display: flex;
-        }
+    #map {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(255,255,255,0.15), rgba(255,255,255,0.15)),
+        url("https://tile.openstreetmap.org/5/16/10.png");
+      background-size: cover;
+      background-position: center;
+    }
 
-        /* Sidebar: professional + mobile friendly */
-        #sidebar {
-            width: 280px;
-            max-width: 80vw;
-            background: #ffffff;
-            border-right: 1px solid #ddd;
-            padding: 12px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            position: relative;
-            transition: transform 0.3s ease;
-        }
+    .map-placeholder-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 18px 26px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 14px;
+      color: #111827;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+      pointer-events: none;
+    }
 
-        #sidebarHeader {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    /* =========================
+       SIDEBAR
+    ========================= */
 
-        #sidebarTitle {
-            font-size: 16px;
-            font-weight: 600;
-        }
+    .sidebar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 280px;
+      height: 100%;
+      z-index: 900;
+      background: #111827;
+      color: #ffffff;
+      padding: 74px 18px 20px;
+      box-shadow: 8px 0 24px rgba(0, 0, 0, 0.28);
+      transition: transform 0.25s ease;
+    }
 
-        #sidebarToggle {
-            background: #0078ff;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            padding: 6px 10px;
-            font-size: 13px;
-            cursor: pointer;
-        }
+    .sidebar.hidden {
+      transform: translateX(-100%);
+    }
 
-        /* Sidebar hidden (slide out) */
-        #sidebar.hidden {
-            transform: translateX(-100%);
-        }
+    .sidebar h2 {
+      margin: 0 0 20px;
+      font-size: 22px;
+    }
 
-        #sidebar label {
-            font-size: 13px;
-            font-weight: 500;
-            margin-top: 6px;
-        }
+    .sidebar button {
+      width: 100%;
+      display: block;
+      margin-bottom: 10px;
+      padding: 12px 14px;
+      border: none;
+      border-radius: 10px;
+      background: #1f2937;
+      color: #ffffff;
+      font-size: 14px;
+      text-align: left;
+      cursor: pointer;
+    }
 
-        #sidebar select,
-        #sidebar button,
-        #sidebar input[type="checkbox"] {
-            font-size: 13px;
-        }
+    .sidebar button:hover {
+      background: #374151;
+    }
 
-        #sidebar button {
-            background: #0078ff;
-            color: white;
-            border: none;
-            padding: 8px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 4px;
-        }
+    .sidebar-toggle-btn {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 1200;
+      width: 44px;
+      height: 44px;
+      border: none;
+      border-radius: 12px;
+      background: #2563eb;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
 
-        #sidebar button:hover {
-            background: #005fcc;
-        }
+    .sidebar-toggle-btn:hover {
+      background: #1d4ed8;
+    }
 
-        /* Filters collapsible section */
-        .filter-section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            margin-top: 8px;
-            padding: 6px 4px;
-            background: #f0f0f0;
-            border-radius: 4px;
-        }
+    /* =========================
+       DIGITAL CLOCK
+    ========================= */
 
-        .filter-section-content {
-            display: none; /* hidden by default, toggled in JS */
-            margin-top: 6px;
-        }
+    .clock-box {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 850;
+      min-width: 170px;
+      padding: 12px 18px;
+      border-radius: 16px;
+      background: rgba(17, 24, 39, 0.9);
+      color: #ffffff;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+      backdrop-filter: blur(8px);
+    }
 
-        #map {
-            flex: 1;
-        }
+    .clock-label {
+      font-size: 12px;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
 
-        /* Crosshair in center of map */
-        #crosshair {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 40px;
-            height: 40px;
-            margin-left: -20px;
-            margin-top: -20px;
-            z-index: 1100;
-            pointer-events: none;
-            display: none; /* shown in add mode */
-        }
+    .digital-clock {
+      font-size: 25px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
 
-        #crosshair::before,
-        #crosshair::after {
-            content: "";
-            position: absolute;
-            background: rgba(0,0,0,0.7);
-        }
+    .clock-date {
+      font-size: 12px;
+      color: #d1d5db;
+      margin-top: 4px;
+    }
 
-        #crosshair::before {
-            width: 2px;
-            height: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
+    /* =========================
+       FILTER PANEL
+    ========================= */
 
-        #crosshair::after {
-            height: 2px;
-            width: 40px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
+    .filter-panel-wrapper {
+      position: absolute;
+      top: 86px;
+      left: 306px;
+      z-index: 820;
+      width: 280px;
+      transition: left 0.25s ease;
+    }
 
-        #crosshairCircle {
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            border: 2px solid rgba(0,0,0,0.7);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
+    body.sidebar-collapsed .filter-panel-wrapper {
+      left: 16px;
+    }
 
-        /* Floating add button */
-        #addObsBtn {
-            position: fixed;
-            right: 20px;
-            bottom: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: #0078ff;
-            color: white;
-            border: none;
-            font-size: 28px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 1200;
-        }
+    .toggle-filters-btn {
+      width: 100%;
+      padding: 10px 12px;
+      background: #111827;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      margin-bottom: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+    }
 
-        #addObsBtn.cross-mode {
-            background: #27ae60;
-        }
+    .filter-panel {
+      background: rgba(255, 255, 255, 0.96);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      backdrop-filter: blur(8px);
+    }
 
-        /* Form popup: bottom, professional layout, not covering crosshair */
-        .form-popup {
-            position: fixed;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            margin: 0;
-            background: #ffffff;
-            padding: 16px;
-            border-top: 1px solid #ccc;
-            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
-            max-width: 480px;
-            width: 100%;
-            margin-left: auto;
-            margin-right: auto;
-            border-radius: 12px 12px 0 0;
-            z-index: 1000; /* below crosshair (1100) so cross stays visible */
-            display: none;
-        }
+    .filter-panel.hidden {
+      display: none;
+    }
 
-        .form-popup h3 {
-            margin-top: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 16px;
-        }
+    .filter-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 12px;
+    }
 
-        .close-btn {
-            cursor: pointer;
-            font-size: 20px;
-        }
+    .filter-row:last-child {
+      margin-bottom: 0;
+    }
 
-        .form-row {
-            display: flex;
-            flex-direction: column;
-            margin-top: 8px;
-        }
+    .filter-row label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 5px;
+    }
 
-        .form-row label {
-            font-size: 13px;
-            font-weight: 500;
-            margin-bottom: 4px;
-        }
+    .filter-row input,
+    .filter-row select {
+      height: 38px;
+      padding: 0 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 9px;
+      font-size: 14px;
+      background: white;
+    }
 
-        .form-row input,
-        .form-row textarea {
-            font-size: 13px;
-            padding: 6px 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-        }
+    /* =========================
+       BOTTOM FORM
+    ========================= */
 
-        .form-actions {
-            margin-top: 12px;
-            display: flex;
-            justify-content: flex-end;
-        }
+    .bottom-form {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 800;
 
-        .form-actions button {
-            background: #27ae60;
-            color: #fff;
-            border: none;
-            padding: 8px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
 
-        .form-actions button:hover {
-            background: #1f8a4c;
-        }
+      max-width: calc(100% - 40px);
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 8px 26px rgba(0,0,0,0.24);
+      backdrop-filter: blur(8px);
+    }
 
-        /* Analog clock time picker container */
-        #timePickerContainer {
-            margin-top: 8px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
+    .bottom-form input,
+    .bottom-form select {
+      height: 38px;
+      min-width: 140px;
+      padding: 0 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 9px;
+      font-size: 14px;
+      background: white;
+    }
 
-        #analogClock {
-            width: 140px;
-            height: 140px;
-            border-radius: 50%;
-            border: 2px solid #333;
-            position: relative;
-            margin-top: 8px;
-        }
+    .bottom-form button {
+      height: 38px;
+      padding: 0 18px;
+      border: none;
+      border-radius: 9px;
+      background: #2563eb;
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
 
-        .clock-hand {
-            position: absolute;
-            width: 2px;
-            height: 50%;
-            background: #333;
-            top: 25%;
-            left: 50%;
-            transform-origin: bottom center;
-        }
+    .bottom-form button:hover {
+      background: #1d4ed8;
+    }
 
-        .clock-center {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #333;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
+    /* =========================
+       SAVE PROJECT PAGE / VIEW
+    ========================= */
 
-        /* Small helper text */
-        .helper-text {
-            font-size: 11px;
-            color: #666;
-            margin-top: 4px;
-        }
+    .page {
+      display: none;
+    }
 
-        @media (max-width: 768px) {
-            /* On mobile, sidebar overlays and can be toggled */
-            #appContainer {
-                flex-direction: column;
-            }
-            #sidebar {
-                position: absolute;
-                top: 0;
-                left: 0;
-                height: 100%;
-                background: #ffffff;
-                z-index: 1300;
-            }
-        }
-    </style>
+    .page.active {
+      display: block;
+    }
+
+    .save-project-page {
+      position: absolute;
+      inset: 0;
+      z-index: 1100;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(6px);
+      padding: 70px 20px 20px;
+      overflow-y: auto;
+    }
+
+    .save-project-card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 18px;
+      padding: 24px;
+      box-shadow: 0 18px 60px rgba(0,0,0,0.35);
+    }
+
+    .save-project-card h2 {
+      margin-top: 0;
+      color: #111827;
+    }
+
+    .save-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .save-form-field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .save-form-field.full {
+      grid-column: 1 / -1;
+    }
+
+    .save-form-field label {
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .save-form-field input,
+    .save-form-field select,
+    .save-form-field textarea {
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+      font-family: Arial, sans-serif;
+    }
+
+    .save-form-field textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .save-actions {
+      margin-top: 18px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .secondary-btn,
+    .primary-btn {
+      padding: 11px 18px;
+      border: none;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .secondary-btn {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .primary-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .primary-btn:hover {
+      background: #1d4ed8;
+    }
+
+    /* =========================
+       DIALOG BOX
+    ========================= */
+
+    .info-dialog {
+      border: none;
+      border-radius: 18px;
+      padding: 0;
+      width: min(560px, calc(100% - 32px));
+      box-shadow: 0 24px 70px rgba(0,0,0,0.38);
+      overflow: hidden;
+    }
+
+    .info-dialog::backdrop {
+      background: rgba(0,0,0,0.46);
+    }
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111827;
+      color: white;
+      padding: 16px 18px;
+    }
+
+    .dialog-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .dialog-close-btn {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 28px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .dialog-content {
+      padding: 18px;
+      color: #1f2937;
+      line-height: 1.5;
+      background: white;
+    }
+
+    .dialog-content p {
+      margin-top: 0;
+    }
+
+    /* =========================
+       RESPONSIVE
+    ========================= */
+
+    @media (max-width: 900px) {
+      .filter-panel-wrapper {
+        left: 16px;
+        top: 76px;
+      }
+
+      .clock-box {
+        top: 16px;
+        right: 16px;
+      }
+
+      .bottom-form {
+        flex-wrap: wrap;
+        justify-content: center;
+        width: calc(100% - 32px);
+      }
+
+      .bottom-form input,
+      .bottom-form select,
+      .bottom-form button {
+        flex: 1 1 140px;
+      }
+
+      .save-form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .clock-box {
+        top: 68px;
+        right: 16px;
+        min-width: 140px;
+      }
+
+      .digital-clock {
+        font-size: 20px;
+      }
+
+      .sidebar {
+        width: 250px;
+      }
+
+      .filter-panel-wrapper {
+        width: calc(100% - 32px);
+        top: 145px;
+      }
+
+      .map-placeholder-text {
+        font-size: 13px;
+        padding: 12px 16px;
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <div class="app">
 
-<!-- Startup screen -->
-<div id="startupScreen">
-    <h1>Welkom Luigi</h1>
-    <p>Kies hoe je wilt beginnen</p>
-    <button onclick="startNewProject()">Nieuw project</button>
-    <button onclick="openExistingProject()">Bestaand project openen</button>
-</div>
+    <!-- MAP -->
+    <div id="map">
+      <div class="map-placeholder-text">
+        Map Area
+      </div>
+    </div>
 
-<!-- Main App -->
-<div id="appContainer">
+    <!-- SIDEBAR TOGGLE BUTTON OUTSIDE SIDEBAR -->
+    <button id="sidebarToggleBtn" class="sidebar-toggle-btn" title="Toggle sidebar">
+      ×
+    </button>
 
-    <!-- Sidebar -->
-    <div id="sidebar">
-        <div id="sidebarHeader">
-            <span id="sidebarTitle">Projectpaneel</span>
-            <button id="sidebarToggle" onclick="toggleSidebar()">Verberg</button>
+    <!-- SIDEBAR -->
+    <aside id="sidebar" class="sidebar">
+      <h2>Menu</h2>
+      <button id="newProjectBtn">New Project</button>
+      <button id="projectsBtn">Projects</button>
+      <button id="infoBtn">Information</button>
+      <button id="settingsBtn">Settings</button>
+    </aside>
+
+    <!-- DIGITAL CLOCK -->
+    <div id="clockBox" class="clock-box">
+      <div class="clock-label">Current Time</div>
+      <div id="digitalClock" class="digital-clock">--:--:--</div>
+      <div id="clockDate" class="clock-date">Loading date...</div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filter-panel-wrapper">
+      <button id="toggleFiltersBtn" class="toggle-filters-btn">
+        Hide Filters
+      </button>
+
+      <div id="filterPanel" class="filter-panel">
+        <div class="filter-row">
+          <label for="filterStatus">Status</label>
+          <select id="filterStatus">
+            <option value="">All statuses</option>
+            <option value="planning">Planning</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="paused">Paused</option>
+          </select>
         </div>
 
-        <!-- Collapsible filter section -->
-        <div class="filter-section-header" onclick="toggleFilterSection(this)">
-            <span>Filters</span>
-            <span>▼</span>
-        </div>
-        <div class="filter-section-content">
-            <label>Type</label>
-            <select id="filterType" multiple></select>
-
-            <label>Soort</label>
-            <select id="filterSpeciesMulti" multiple></select>
-
-            <label style="margin-top:6px;">
-                <input type="checkbox" id="filterPhoto"> Alleen met foto
-            </label>
-
-            <button onclick="resetFilters()">Reset filters</button>
+        <div class="filter-row">
+          <label for="filterDate">Date</label>
+          <input type="date" id="filterDate" />
         </div>
 
-        <button id="liveBtn" onclick="toggleLive()">Live positie: UIT</button>
-        <button onclick="exportCSV()">Exporteer CSV</button>
-        <button id="infoBtn" onclick="showInfo()">Info</button>
+        <div class="filter-row">
+          <label for="filterLocation">Location</label>
+          <input type="text" id="filterLocation" placeholder="Enter location" />
+        </div>
+
+        <div class="filter-row">
+          <label for="filterKeyword">Keyword</label>
+          <input type="text" id="filterKeyword" placeholder="Search project" />
+        </div>
+      </div>
     </div>
 
-    <!-- Map -->
-    <div id="map"></div>
-</div>
+    <!-- BOTTOM FILLABLE FORM -->
+    <form id="bottomForm" class="bottom-form">
+      <input type="text" id="quickProjectName" placeholder="Project name" />
+      <input type="text" id="quickLocation" placeholder="Location" />
+      <input type="date" id="quickDate" />
 
-<!-- Crosshair -->
-<div id="crosshair">
-    <div id="crosshairCircle"></div>
-</div>
+      <select id="quickStatus">
+        <option value="">Status</option>
+        <option value="planning">Planning</option>
+        <option value="active">Active</option>
+        <option value="completed">Completed</option>
+        <option value="paused">Paused</option>
+      </select>
 
-<!-- Add Observation Button -->
-<button id="addObsBtn" onclick="toggleAddMode()">+</button>
+      <button type="submit">Save</button>
+    </form>
 
-<!-- Form Popup (bottom, professional layout) -->
-<div id="form" class="form-popup">
-    <h3>
-        Observatie
-        <span class="close-btn" onclick="closeForm()">×</span>
-    </h3>
+    <!-- SAVE PROJECT PAGE -->
+    <section id="saveProjectPage" class="page save-project-page">
+      <div class="save-project-card">
+        <h2>Save New Project</h2>
 
-    <div class="form-row">
-        <label for="type">Type</label>
-        <input id="type" placeholder="Bijv. boom, nest, object">
-    </div>
-
-    <div class="form-row">
-        <label for="species">Soort</label>
-        <input id="species" placeholder="Bijv. eik, merel">
-    </div>
-
-    <div class="form-row">
-        <label for="date">Datum</label>
-        <!-- Date is auto-filled to now in JS -->
-        <input id="date" type="date">
-    </div>
-
-    <div class="form-row">
-        <label for="time">Tijd</label>
-        <!-- Hidden actual time input, controlled by analog clock -->
-        <input id="time" type="time" style="display:none;">
-        <div id="timePickerContainer">
-            <div>Analoge klok</div>
-            <div id="analogClock">
-                <div id="hourHand" class="clock-hand"></div>
-                <div id="minuteHand" class="clock-hand" style="height:60%; top:20%;"></div>
-                <div class="clock-center"></div>
+        <form id="saveProjectForm">
+          <div class="save-form-grid">
+            <div class="save-form-field">
+              <label for="saveProjectName">Project Name</label>
+              <input type="text" id="saveProjectName" placeholder="Enter project name" />
             </div>
-            <div class="helper-text">Klik op de klok om de tijd aan te passen. (Eenvoudige analoge selectie)</div>
-            <div class="helper-text" id="timeDisplay"></div>
-        </div>
-    </div>
 
-    <div class="form-row">
-        <label for="comment">Opmerking</label>
-        <textarea id="comment" rows="3" placeholder="Extra informatie"></textarea>
-    </div>
+            <div class="save-form-field">
+              <label for="saveProjectStatus">Status</label>
+              <select id="saveProjectStatus">
+                <option value="">Select status</option>
+                <option value="planning">Planning</option>
+                <option value="active">Active</option>
+                <option value="completed">Completed</option>
+                <option value="paused">Paused</option>
+              </select>
+            </div>
 
-    <div class="form-row">
-        <label for="photo">Foto</label>
-        <input id="photo" type="file" accept="image/*">
-    </div>
+            <div class="save-form-field">
+              <label for="saveProjectLocation">Location</label>
+              <input type="text" id="saveProjectLocation" placeholder="Enter location" />
+            </div>
 
-    <div class="form-actions">
-        <button onclick="saveMarker()">Opslaan</button>
-    </div>
-</div>
+            <div class="save-form-field">
+              <label for="saveProjectDate">Date</label>
+              <input type="date" id="saveProjectDate" />
+            </div>
 
-<script>
-/* -----------------------------------------------------------
-   GLOBAL STATE & ICON
-   ----------------------------------------------------------- */
+            <div class="save-form-field full">
+              <label for="saveProjectDescription">Description</label>
+              <textarea id="saveProjectDescription" placeholder="Project details"></textarea>
+            </div>
+          </div>
 
-let map;
-let markers = [];          // Array of { id, data, layer }
-let tempLatLng = null;     // Coordinates for current observation (from crosshair center)
-let editingId = null;      // If not null, we are editing an existing marker
-let addMode = false;       // Crosshair add mode on/off
+          <div class="save-actions">
+            <button type="button" id="cancelSaveProjectBtn" class="secondary-btn">
+              Back to Map
+            </button>
+            <button type="submit" class="primary-btn">
+              Save Project
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
 
-let projectHandle = null;  // Linked GeoJSON file handle
+    <!-- INFORMATION DIALOG -->
+    <dialog id="infoDialog" class="info-dialog">
+      <div class="dialog-header">
+        <h3 id="dialogTitle">Information</h3>
+        <button id="closeDialogBtn" class="dialog-close-btn">×</button>
+      </div>
 
-// Centered Leaflet icon
-const centeredIcon = L.icon({
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
-});
+      <div id="dialogContent" class="dialog-content">
+        Information will appear here.
+      </div>
+    </dialog>
 
-/* -----------------------------------------------------------
-   PROJECT SYSTEM
-   ----------------------------------------------------------- */
+  </div>
 
-async function startNewProject() {
-    // Ask for project name
-    let name = prompt("Projectnaam");
-    if (!name) name = "project";
+  <script>
+    /* =========================
+       DIGITAL CLOCK
+    ========================= */
 
-    // Create new GeoJSON file
-    projectHandle = await window.showSaveFilePicker({
-        suggestedName: name + ".geojson",
-        types: [{
-            description: "GeoJSON",
-            accept: { "application/geo+json": [".geojson"] }
-        }]
-    });
+    function updateClock() {
+      const clockElement = document.getElementById("digitalClock");
+      const dateElement = document.getElementById("clockDate");
 
-    // Reset markers in localStorage
-    localStorage.setItem("markers", "[]");
-    await writeGeoJSON();
+      if (!clockElement || !dateElement) return;
 
-    startApp();
-}
+      const now = new Date();
 
-async function openExistingProject() {
-    // Open existing GeoJSON file
-    const [handle] = await window.showOpenFilePicker({
-        types: [{
-            description: "GeoJSON",
-            accept: { "application/geo+json": [".geojson"] }
-        }]
-    });
+      const time = now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+      });
 
-    projectHandle = handle;
-    await readGeoJSONIntoLocalStorage();
+      const date = now.toLocaleDateString([], {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      });
 
-    startApp();
-}
-
-function startApp() {
-    // Hide startup screen, show app
-    document.getElementById("startupScreen").style.display = "none";
-    document.getElementById("appContainer").style.display = "flex";
-
-    initMap();
-    loadMarkers();
-    setupFilterListeners();
-    initAnalogClock();
-}
-
-/* -----------------------------------------------------------
-   FILE READ / WRITE
-   ----------------------------------------------------------- */
-
-async function writeGeoJSON() {
-    // Write current markers to linked GeoJSON file
-    if (!projectHandle) return;
-
-    const geojson = markersToGeoJSON();
-    const writable = await projectHandle.createWritable();
-    await writable.write(JSON.stringify(geojson, null, 2));
-    await writable.close();
-}
-
-async function readGeoJSONIntoLocalStorage() {
-    // Read GeoJSON file and store markers in localStorage
-    const file = await projectHandle.getFile();
-    const text = await file.text();
-    const geojson = JSON.parse(text);
-
-    const importedMarkers = geojson.features.map(f => ({
-        id: f.properties.id,
-        lat: f.geometry.coordinates[1],
-        lng: f.geometry.coordinates[0],
-        type: f.properties.type,
-        species: f.properties.species,
-        date: f.properties.date,
-        time: f.properties.time,
-        comment: f.properties.comment,
-        photo: f.properties.photo
-    }));
-
-    localStorage.setItem("markers", JSON.stringify(importedMarkers));
-}
-
-/* -----------------------------------------------------------
-   MAP INITIALIZATION (with satellite layer)
-   ----------------------------------------------------------- */
-
-function initMap() {
-    // Base OSM layer
-    let normal = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    });
-
-    // Satellite layer (ESRI)
-    let satellite = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        { attribution: 'Tiles © Esri' }
-    );
-
-    // Initialize map
-    map = L.map('map', {
-        center: [52.3867, 4.9643],
-        zoom: 15,
-        layers: [normal]
-    });
-
-    // Layer control
-    L.control.layers(
-        { "Kaart": normal, "Satelliet": satellite },
-        {}
-    ).addTo(map);
-}
-
-/* -----------------------------------------------------------
-   SAVE MARKER (crosshair-based coordinates)
-   ----------------------------------------------------------- */
-
-function saveMarker() {
-    // Read form values
-    let type = document.getElementById("type").value;
-    let species = document.getElementById("species").value;
-    let date = document.getElementById("date").value;
-    let time = document.getElementById("time").value; // hidden input, updated by analog clock
-    let comment = document.getElementById("comment").value;
-    let file = document.getElementById("photo").files[0];
-
-    // Ensure we have coordinates from crosshair center
-    if (!tempLatLng) {
-        tempLatLng = map.getCenter(); // fallback: use map center
+      clockElement.textContent = time;
+      dateElement.textContent = date;
     }
 
-    let reader = new FileReader();
+    setInterval(updateClock, 1000);
+    updateClock();
 
-    reader.onload = async function(e) {
-        let photoData = e.target.result || null;
-        let saved = JSON.parse(localStorage.getItem("markers") || "[]");
+    /* =========================
+       SIDEBAR TOGGLE
+    ========================= */
 
-        if (editingId) {
-            // Update existing marker
-            let idx = saved.findIndex(m => m.id === editingId);
-            if (idx !== -1) {
-                saved[idx].type = type;
-                saved[idx].species = species;
-                saved[idx].date = date;
-                saved[idx].time = time;
-                saved[idx].comment = comment;
-                saved[idx].lat = tempLatLng.lat;
-                saved[idx].lng = tempLatLng.lng;
-                if (file) saved[idx].photo = photoData;
-            }
-        } else {
-            // Create new marker
-            saved.push({
-                id: Date.now(),
-                lat: tempLatLng.lat,
-                lng: tempLatLng.lng,
-                type,
-                species,
-                date,
-                time,
-                comment,
-                photo: photoData
-            });
-        }
-
-        localStorage.setItem("markers", JSON.stringify(saved));
-        loadMarkers();
-        await writeGeoJSON(); // rewrite linked file
-        closeForm();
-    };
-
-    if (file) {
-        reader.readAsDataURL(file);
-    } else {
-        // No file: simulate onload with null photo
-        reader.onload({ target: { result: null } });
-    }
-}
-
-/* -----------------------------------------------------------
-   LOAD MARKERS
-   ----------------------------------------------------------- */
-
-function loadMarkers() {
-    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-
-    // Remove existing layers
-    markers.forEach(m => map.removeLayer(m.layer));
-    markers = [];
-
-    // Add markers to map
-    saved.forEach(m => {
-        let layer = L.marker([m.lat, m.lng], { icon: centeredIcon })
-            .bindPopup(makePopupHtml(m))
-            .addTo(map);
-
-        markers.push({ id: m.id, data: m, layer });
-    });
-
-    applyFilters();
-}
-
-/* -----------------------------------------------------------
-   POPUP HTML
-   ----------------------------------------------------------- */
-
-function makePopupHtml(m) {
-    // Build popup content
-    let html = `<b>${m.type}</b><br>${m.species}<br>${m.date} ${m.time}`;
-    if (m.comment) html += `<br><i>${m.comment}</i>`;
-    if (m.photo) html += `<br><img src="${m.photo}" style="max-width:100%;">`;
-    html += `<br><br><button onclick="editMarker(${m.id})">Wijzig</button>
-             <button onclick="deleteMarker(${m.id})">Verwijder</button>`;
-    return html;
-}
-
-/* -----------------------------------------------------------
-   DELETE MARKER
-   ----------------------------------------------------------- */
-
-function deleteMarker(id) {
-    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-    saved = saved.filter(m => m.id !== id);
-    localStorage.setItem("markers", JSON.stringify(saved));
-    loadMarkers();
-    writeGeoJSON(); // rewrite file
-}
-
-/* -----------------------------------------------------------
-   EDIT MARKER
-   ----------------------------------------------------------- */
-
-function editMarker(id) {
-    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-    let m = saved.find(x => x.id === id);
-    if (!m) return;
-
-    editingId = id;
-    tempLatLng = { lat: m.lat, lng: m.lng };
-
-    document.getElementById("type").value = m.type;
-    document.getElementById("species").value = m.species;
-    document.getElementById("date").value = m.date;
-    document.getElementById("time").value = m.time;
-    document.getElementById("comment").value = m.comment || "";
-
-    // Update analog clock display to existing time
-    setAnalogClockFromTime(m.time);
-
-    document.getElementById("form").style.display = "block";
-}
-
-/* -----------------------------------------------------------
-   CSV EXPORT
-   ----------------------------------------------------------- */
-
-function exportCSV() {
-    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-    let csv = "lat,lng,type,species,date,time,comment\n";
-
-    saved.forEach(m => {
-        // Basic CSV line; could be improved with escaping if needed
-        let safeComment = (m.comment || "").replace(/"/g, '""');
-        csv += `${m.lat},${m.lng},${m.type},${m.species},${m.date},${m.time},"${safeComment}"\n`;
-    });
-
-    let blob = new Blob([csv], { type: "text/csv" });
-    let a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "markers.csv";
-    a.click();
-}
-
-/* -----------------------------------------------------------
-   GEOJSON BUILDER
-   ----------------------------------------------------------- */
-
-function markersToGeoJSON() {
-    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-
-    return {
-        type: "FeatureCollection",
-        features: saved.map(m => ({
-            type: "Feature",
-            properties: {
-                id: m.id,
-                type: m.type,
-                species: m.species,
-                date: m.date,
-                time: m.time,
-                comment: m.comment,
-                photo: m.photo
-            },
-            geometry: {
-                type: "Point",
-                coordinates: [m.lng, m.lat]
-            }
-        }))
-    };
-}
-
-/* -----------------------------------------------------------
-   FILTERS (multi-select, collapsible)
-   ----------------------------------------------------------- */
-
-function setupFilterListeners() {
-    document.getElementById("filterType").addEventListener("change", applyFilters);
-    document.getElementById("filterSpeciesMulti").addEventListener("change", applyFilters);
-    document.getElementById("filterPhoto").addEventListener("change", applyFilters);
-
-    // Example: populate filter selects from existing markers
-    populateFilterOptions();
-}
-
-function populateFilterOptions() {
-    let saved = JSON.parse(localStorage.getItem("markers") || "[]");
-    let typeSet = new Set();
-    let speciesSet = new Set();
-
-    saved.forEach(m => {
-        if (m.type) typeSet.add(m.type);
-        if (m.species) speciesSet.add(m.species);
-    });
-
-    let typeSel = document.getElementById("filterType");
-    let speciesSel = document.getElementById("filterSpeciesMulti");
-    typeSel.innerHTML = "";
-    speciesSel.innerHTML = "";
-
-    typeSet.forEach(t => {
-        let opt = document.createElement("option");
-        opt.value = t;
-        opt.textContent = t;
-        opt.selected = true; // default: all selected
-        typeSel.appendChild(opt);
-    });
-
-    speciesSet.forEach(s => {
-        let opt = document.createElement("option");
-        opt.value = s;
-        opt.textContent = s;
-        opt.selected = true; // default: all selected
-        speciesSel.appendChild(opt);
-    });
-}
-
-function resetFilters() {
-    const typeSel = document.getElementById("filterType");
-    for (let opt of typeSel.options) opt.selected = true;
-
-    const speciesSel = document.getElementById("filterSpeciesMulti");
-    for (let opt of speciesSel.options) opt.selected = true;
-
-    document.getElementById("filterPhoto").checked = false;
-    applyFilters();
-}
-
-function getSelectedValues(selectEl) {
-    let vals = [];
-    for (let opt of selectEl.options) {
-        if (opt.selected) vals.push(opt.value);
-    }
-    return vals;
-}
-
-function applyFilters() {
-    let typeSel = document.getElementById("filterType");
-    let speciesSel = document.getElementById("filterSpeciesMulti");
-    let onlyPhoto = document.getElementById("filterPhoto").checked;
-
-    let typesAllowed = getSelectedValues(typeSel);
-    let speciesAllowed = getSelectedValues(speciesSel);
-
-    markers.forEach(m => {
-        let d = m.data;
-        let visible = true;
-
-        if (typesAllowed.length && !typesAllowed.includes(d.type)) visible = false;
-        if (speciesAllowed.length && !speciesAllowed.includes(d.species)) visible = false;
-        if (onlyPhoto && !d.photo) visible = false;
-
-        if (visible) {
-            if (!map.hasLayer(m.layer)) map.addLayer(m.layer);
-        } else {
-            if (map.hasLayer(m.layer)) map.removeLayer(m.layer);
-        }
-    });
-}
-
-/* -----------------------------------------------------------
-   LIVE GPS
-   ----------------------------------------------------------- */
-
-let liveTracking = false;
-let liveMarker = null;
-let liveWatchID = null;
-
-function toggleLive() {
-    let btn = document.getElementById("liveBtn");
-
-    if (!liveTracking) {
-        liveTracking = true;
-        btn.textContent = "Live positie: AAN";
-
-        liveWatchID = navigator.geolocation.watchPosition(pos => {
-            let lat = pos.coords.latitude;
-            let lng = pos.coords.longitude;
-
-            if (!liveMarker) {
-                liveMarker = L.circleMarker([lat, lng], {
-                    radius: 6,
-                    color: "#3498db",
-                    weight: 3,
-                    fillColor: "#3498db",
-                    fillOpacity: 0.9
-                }).addTo(map);
-            } else {
-                liveMarker.setLatLng([lat, lng]);
-            }
-
-            map.setView([lat, lng]);
-        });
-    } else {
-        liveTracking = false;
-        btn.textContent = "Live positie: UIT";
-
-        if (liveWatchID !== null) {
-            navigator.geolocation.clearWatch(liveWatchID);
-            liveWatchID = null;
-        }
-    }
-}
-
-/* -----------------------------------------------------------
-   INFO POPUP (instructions)
-   ----------------------------------------------------------- */
-
-function showInfo() {
-    // Detailed instructions on how to use the app
-    alert(
-        "Handleiding Field Marker App:\n\n" +
-        "1. Start een nieuw project of open een bestaand GeoJSON-bestand.\n" +
-        "2. Gebruik de kaart om naar het gewenste gebied te navigeren.\n" +
-        "3. Klik op de + knop om een observatie toe te voegen. De kruisdraden in het midden geven de exacte locatie aan.\n" +
-        "4. Vul Type, Soort, Datum, Tijd, Opmerking en eventueel een foto in.\n" +
-        "   - Datum en tijd worden automatisch ingevuld met de huidige tijd.\n" +
-        "   - De analoge klok laat je de tijd aanpassen.\n" +
-        "5. Klik op Opslaan om de observatie op te slaan. De GeoJSON wordt automatisch bijgewerkt.\n" +
-        "6. Gebruik de filters in de zijbalk om observaties te selecteren op Type, Soort en foto.\n" +
-        "7. Met Live positie kun je je huidige GPS-positie volgen.\n" +
-        "8. Via Exporteer CSV kun je alle observaties als CSV-bestand downloaden.\n" +
-        "9. Je kunt wisselen tussen kaart- en satellietweergave via de laagknoppen op de kaart.\n"
-    );
-}
-
-/* -----------------------------------------------------------
-   SIDEBAR TOGGLE (mobile friendly)
-   ----------------------------------------------------------- */
-
-function toggleSidebar() {
     const sidebar = document.getElementById("sidebar");
-    const btn = document.getElementById("sidebarToggle");
+    const sidebarToggleBtn = document.getElementById("sidebarToggleBtn");
 
-    if (sidebar.classList.contains("hidden")) {
-        sidebar.classList.remove("hidden");
-        btn.textContent = "Verberg";
-    } else {
-        sidebar.classList.add("hidden");
-        btn.textContent = "Toon";
-    }
-}
+    sidebarToggleBtn.addEventListener("click", function () {
+      sidebar.classList.toggle("hidden");
 
-/* -----------------------------------------------------------
-   CROSSHAIR ADD MODE
-   ----------------------------------------------------------- */
+      const isHidden = sidebar.classList.contains("hidden");
 
-function toggleAddMode() {
-    addMode = !addMode;
-    const crosshair = document.getElementById("crosshair");
-    const btn = document.getElementById("addObsBtn");
-
-    if (addMode) {
-        // Turn on crosshair mode
-        crosshair.style.display = "block";
-        btn.classList.add("cross-mode");
-
-        // Set tempLatLng to current map center
-        tempLatLng = map.getCenter();
-
-        // Auto-fill date/time to now
-        setDateTimeToNow();
-
-        // Show form
-        document.getElementById("form").style.display = "block";
-    } else {
-        // Turn off crosshair mode
-        crosshair.style.display = "none";
-        btn.classList.remove("cross-mode");
-        tempLatLng = null;
-    }
-}
-
-function closeForm() {
-    // Close form and exit add/edit mode
-    document.getElementById("form").style.display = "none";
-    editingId = null;
-    addMode = false;
-    document.getElementById("crosshair").style.display = "none";
-    document.getElementById("addObsBtn").classList.remove("cross-mode");
-}
-
-/* -----------------------------------------------------------
-   FILTER SECTION TOGGLE (hide/show filters)
-   ----------------------------------------------------------- */
-
-function toggleFilterSection(headerEl) {
-    const content = headerEl.nextElementSibling;
-    if (!content) return;
-
-    if (content.style.display === "block") {
-        content.style.display = "none";
-        headerEl.querySelectorAll("span")[1].textContent = "▼";
-    } else {
-        content.style.display = "block";
-        headerEl.querySelectorAll("span")[1].textContent = "▲";
-    }
-}
-
-/* -----------------------------------------------------------
-   ANALOG CLOCK TIME PICKER
-   ----------------------------------------------------------- */
-
-let currentHour = 0;
-let currentMinute = 0;
-
-function initAnalogClock() {
-    // Initialize clock to current time
-    setDateTimeToNow();
-
-    const clock = document.getElementById("analogClock");
-    clock.addEventListener("click", function(e) {
-        // Simple analog selection: click position sets hour/minute
-        const rect = clock.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-
-        const dx = e.clientX - cx;
-        const dy = e.clientY - cy;
-
-        const angle = Math.atan2(dy, dx); // radians
-        const deg = angle * 180 / Math.PI; // degrees
-
-        // Map angle to minutes (0-59)
-        let minute = Math.round(((deg + 90 + 360) % 360) / 6); // 360/60 = 6 deg per minute
-        if (minute === 60) minute = 0;
-
-        // For simplicity: hour stays same, minute changes
-        currentMinute = minute;
-
-        updateAnalogClockHands();
-        updateTimeInputFromClock();
+      sidebarToggleBtn.textContent = isHidden ? "☰" : "×";
+      document.body.classList.toggle("sidebar-collapsed", isHidden);
     });
-}
 
-function setDateTimeToNow() {
-    const now = new Date();
-    currentHour = now.getHours();
-    currentMinute = now.getMinutes();
+    /* =========================
+       FILTER TOGGLE
+    ========================= */
 
-    // Set date input to today
-    const dateInput = document.getElementById("date");
-    dateInput.value = now.toISOString().slice(0, 10);
+    const toggleFiltersBtn = document.getElementById("toggleFiltersBtn");
+    const filterPanel = document.getElementById("filterPanel");
 
-    updateAnalogClockHands();
-    updateTimeInputFromClock();
-}
+    toggleFiltersBtn.addEventListener("click", function () {
+      filterPanel.classList.toggle("hidden");
 
-function updateAnalogClockHands() {
-    const hourHand = document.getElementById("hourHand");
-    const minuteHand = document.getElementById("minuteHand");
+      const isHidden = filterPanel.classList.contains("hidden");
+      toggleFiltersBtn.textContent = isHidden ? "Show Filters" : "Hide Filters";
+    });
 
-    // Hour hand angle (12h clock)
-    const hourAngle = ((currentHour % 12) + currentMinute / 60) * 30; // 360/12 = 30 deg per hour
-    const minuteAngle = currentMinute * 6; // 360/60 = 6 deg per minute
+    /* =========================
+       DIALOG BOX
+    ========================= */
 
-    hourHand.style.transform = `translateX(-50%) rotate(${hourAngle}deg)`;
-    minuteHand.style.transform = `translateX(-50%) rotate(${minuteAngle}deg)`;
+    const infoDialog = document.getElementById("infoDialog");
+    const dialogTitle = document.getElementById("dialogTitle");
+    const dialogContent = document.getElementById("dialogContent");
+    const closeDialogBtn = document.getElementById("closeDialogBtn");
 
-    // Display text
-    const display = document.getElementById("timeDisplay");
-    const hh = String(currentHour).padStart(2, "0");
-    const mm = String(currentMinute).padStart(2, "0");
-    display.textContent = `Geselecteerde tijd: ${hh}:${mm}`;
-}
+    function showInfoDialog(title, content) {
+      dialogTitle.textContent = title;
+      dialogContent.innerHTML = content;
+      infoDialog.showModal();
+    }
 
-function updateTimeInputFromClock() {
-    const timeInput = document.getElementById("time");
-    const hh = String(currentHour).padStart(2, "0");
-    const mm = String(currentMinute).padStart(2, "0");
-    timeInput.value = `${hh}:${mm}`;
-}
+    closeDialogBtn.addEventListener("click", function () {
+      infoDialog.close();
+    });
 
-function setAnalogClockFromTime(timeStr) {
-    if (!timeStr) return;
-    const parts = timeStr.split(":");
-    if (parts.length !== 2) return;
-    currentHour = parseInt(parts[0], 10) || 0;
-    currentMinute = parseInt(parts[1], 10) || 0;
-    updateAnalogClockHands();
-    updateTimeInputFromClock();
-}
-</script>
+    infoDialog.addEventListener("click", function (event) {
+      const rect = infoDialog.getBoundingClientRect();
 
+      const clickedOutside =
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom;
+
+      if (clickedOutside) {
+        infoDialog.close();
+      }
+    });
+
+    /* =========================
+       NEW PROJECT BEHAVIOR
+       Goes directly to save page.
+       No prompt for project name.
+    ========================= */
+
+    const newProjectBtn = document.getElementById("newProjectBtn");
+    const saveProjectPage = document.getElementById("saveProjectPage");
+    const cancelSaveProjectBtn = document.getElementById("cancelSaveProjectBtn");
+
+    newProjectBtn.addEventListener("click", function () {
+      saveProjectPage.classList.add("active");
+    });
+
+    cancelSaveProjectBtn.addEventListener("click", function () {
+      saveProjectPage.classList.remove("active");
+    });
+
+    /* =========================
+       MENU BUTTONS
+    ========================= */
+
+    document.getElementById("projectsBtn").addEventListener("click", function () {
+      showInfoDialog(
+        "Projects",
+        `
+          <p>Your project list can be shown here.</p>
+          <p>This is displayed in a dialog box instead of covering the map permanently.</p>
+        `
+      );
+    });
+
+    document.getElementById("infoBtn").addEventListener("click", function () {
+      showInfoDialog(
+        "Information",
+        `
+          <p>This interface includes:</p>
+          <ul>
+            <li>A digital clock in the top-right corner.</li>
+            <li>A bottom fillable project form.</li>
+            <li>Separate-row filters with hide/show control.</li>
+            <li>A sidebar that can be hidden and shown again.</li>
+            <li>Information displayed inside dialog boxes.</li>
+          </ul>
+        `
+      );
+    });
+
+    document.getElementById("settingsBtn").addEventListener("click", function () {
+      showInfoDialog(
+        "Settings",
+        `
+          <p>Settings can be added here.</p>
+        `
+      );
+    });
+
+    /* =========================
+       BOTTOM QUICK FORM SAVE
+    ========================= */
+
+    const bottomForm = document.getElementById("bottomForm");
+
+    bottomForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const projectName = document.getElementById("quickProjectName").value.trim();
+      const location = document.getElementById("quickLocation").value.trim();
+      const date = document.getElementById("quickDate").value;
+      const status = document.getElementById("quickStatus").value;
+
+      showInfoDialog(
+        "Project Saved",
+        `
+          <p><strong>Project Name:</strong> ${projectName || "Not provided"}</p>
+          <p><strong>Location:</strong> ${location || "Not provided"}</p>
+          <p><strong>Date:</strong> ${date || "Not provided"}</p>
+          <p><strong>Status:</strong> ${status || "Not provided"}</p>
+        `
+      );
+
+      bottomForm.reset();
+    });
+
+    /* =========================
+       SAVE PROJECT PAGE FORM
+    ========================= */
+
+    const saveProjectForm = document.getElementById("saveProjectForm");
+
+    saveProjectForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const projectName = document.getElementById("saveProjectName").value.trim();
+      const location = document.getElementById("saveProjectLocation").value.trim();
+      const date = document.getElementById("saveProjectDate").value;
+      const status = document.getElementById("saveProjectStatus").value;
+      const description = document.getElementById("saveProjectDescription").value.trim();
+
+      saveProjectPage.classList.remove("active");
+
+      showInfoDialog(
+        "New Project Saved",
+        `
+          <p><strong>Project Name:</strong> ${projectName || "Not provided"}</p>
+          <p><strong>Location:</strong> ${location || "Not provided"}</p>
+          <p><strong>Date:</strong> ${date || "Not provided"}</p>
+          <p><strong>Status:</strong> ${status || "Not provided"}</p>
+          <p><strong>Description:</strong> ${description || "Not provided"}</p>
+        `
+      );
+
+      saveProjectForm.reset();
+    });
+
+    /* =========================
+       FILTER CHANGE EXAMPLE
+    ========================= */
+
+    const filterInputs = [
+      document.getElementById("filterStatus"),
+      document.getElementById("filterDate"),
+      document.getElementById("filterLocation"),
+      document.getElementById("filterKeyword")
+    ];
+
+    filterInputs.forEach(function (input) {
+      input.addEventListener("change", function () {
+        console.log("Filters changed:", {
+          status: document.getElementById("filterStatus").value,
+          date: document.getElementById("filterDate").value,
+          location: document.getElementById("filterLocation").value,
+          keyword: document.getElementById("filterKeyword").value
+        });
+      });
+
+      input.addEventListener("keyup", function () {
+        console.log("Filters changed:", {
+          status: document.getElementById("filterStatus").value,
+          date: document.getElementById("filterDate").value,
+          location: document.getElementById("filterLocation").value,
+          keyword: document.getElementById("filterKeyword").value
+        });
+      });
+    });
+  </script>
 </body>
 </html>
