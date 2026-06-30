@@ -1848,7 +1848,16 @@
     function updateCaptureCoordinates() {
       if (!captureMode || !map) return;
 
-      const center = map.getCenter();
+
+    const centerPoint = [
+      map.getSize().x / 2,
+      map.getSize().y - observationFormPanel.offsetHeight - 40
+    ];
+    
+    const center = map.containerPointToLatLng(centerPoint)
+
+
+      
       currentCoordinates.textContent =
         "Lat " + center.lat.toFixed(6) + ", Lng " + center.lng.toFixed(6);
     }
@@ -1856,7 +1865,14 @@
     async function saveNewObservation(event) {
       event.preventDefault();
 
-      const center = map.getCenter();
+
+    const centerPoint = [
+      map.getSize().x / 2,
+      map.getSize().y - observationFormPanel.offsetHeight - 40
+    ];
+    
+    const center = map.containerPointToLatLng(centerPoint)
+
 
       const feature = {
         type: "Feature",
