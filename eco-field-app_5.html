@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eco Field Notebook</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+body, html { margin:0; height:100%; font-family:Arial; }
+#map { position:absolute; top:0; left:0; right:0; bottom:0; }
+.panel {
+  position:absolute;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:white;
+  padding:10px;
+  border-radius:10px;
+  z-index:999;
+}
+.crosshair {
+  position:absolute;
+  bottom:100px;
+  left:50%;
+  transform:translateX(-50%);
+  width:30px;
+  height:30px;
+  z-index:999;
+}
+.crosshair::before,
+.crosshair::after {
+  content:"";
+  position:absolute;
+  background:red;
+}
+.crosshair::before { width:30px; height:2px; top:14px; }
+.crosshair::after { height:30px; width:2px; left:14px; }
+
+button { margin:5px; }
+</style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<div class="crosshair"></div>
+
+<div class="panel">
+  <button onclick="addObservation()">Add Observation</button>
+  <button onclick="saveGeoJSON()">Save File</button>
+  <button onclick="openReport()">Daily Report</button>
+</div>
+
+<dialog id="reportDialog">
+  <h3>Daily Report</h3>
+  <input type="date" id="reportDate"><br><br>
+  <textarea id="reportText" rows="4" cols="30"></textarea><br><br>
+  <button onclick="saveReport()">Save</button>
+  <button onclick="closeReport()">Close</button>
+</dialog>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let map = L.map('map').setView([52.44, 4.83], 13);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+let geojson = { type:"FeatureCollection", features:[] };
+let markers = L.layerGroup().addTo(map);
+let shapes = L.layerGroup().addTo(map);
+
+let editMarkers = [];
+let editingFeature = null;
+
+// ---------- ADD OBSERVATION ----------
+function addObservation() {
+
+  const centerPoint = [
+    map.getSize().x/2,
+    map.getSize().y - 120
+  ];
+
+  const latlng = map.containerPointToLatLng(centerPoint);
+
+  const feature = {
+    type:"Feature",
+    geometry:{ type:"Point", coordinates:[latlng.lng, latlng.lat] },
+    properties:{
+      id:Date.now()+"",
+      type:"observation"
+    }
+  };
+
+  geojson.features.push(feature);
+  render();
+}
+
+// ---------- RENDER ----------
+function render() {
+  markers.clearLayers();
+  shapes.clearLayers();
+
+  geojson.features.forEach(f=>{
+
+    if(!f.geometry) return;
+
+    if(f.geometry.type==="Point"){
+      let m = L.marker([f.geometry.coordinates[1], f.geometry.coordinates[0]])
+        .addTo(markers);
+
+      m.bindPopup(`
+        Point
+        <br>
+        <button onclick="editFeature('${f.properties.id}')">Edit</button>
+        <button onclick="deleteFeature('${f.properties.id}')">Delete</button>
+      `);
+    }
+
+    if(f.geometry.type==="Polygon"){
+      let latlngs = f.geometry.coordinates[0].map(c=>[c[1], c[0]]);
+      let p = L.polygon(latlngs).addTo(shapes);
+
+      p.bindPopup(`
+        Polygon
+        <br>
+        <button onclick="editFeature('${f.properties.id}')">Edit</button>
+        <button onclick="deleteFeature('${f.properties.id}')">Delete</button>
+      `);
+    }
+  });
+}
+
+// ---------- EDIT ----------
+window.editFeature = function(id){
+
+  let f = geojson.features.find(x=>x.properties.id===id);
+  if(!f) return;
+
+  editingFeature = f;
+
+  editMarkers.forEach(m=>map.removeLayer(m));
+  editMarkers=[];
+
+  if(f.geometry.type==="Point"){
+    let c=f.geometry.coordinates;
+    let m=L.marker([c[1],c[0]],{draggable:true}).addTo(map);
+
+    m.on("dragend",()=>{
+      let pos=m.getLatLng();
+      f.geometry.coordinates=[pos.lng,pos.lat];
+      render();
+    });
+
+    editMarkers.push(m);
+    return;
+  }
+
+  let coords = f.geometry.coordinates[0];
+
+  coords.forEach((c,i)=>{
+    let m=L.marker([c[1],c[0]],{draggable:true}).addTo(map);
+
+    m.on("drag",()=>{
+      let pos=m.getLatLng();
+      coords[i]=[pos.lng,pos.lat];
+      render();
+    });
+
+    editMarkers.push(m);
+  });
+}
+
+// ---------- DELETE ----------
+window.deleteFeature = function(id){
+  geojson.features = geojson.features.filter(f=>f.properties.id!==id);
+  render();
+}
+
+// ---------- DRAW POLYGON ----------
+let drawing=false;
+let points=[];
+
+map.on("click",function(e){
+  if(!drawing) return;
+  points.push([e.latlng.lng, e.latlng.lat]);
+  renderTemp();
+});
+
+map.on("dblclick",function(){
+  if(points.length<3) return;
+
+  geojson.features.push({
+    type:"Feature",
+    geometry:{
+      type:"Polygon",
+      coordinates:[[...points, points[0]]]
+    },
+    properties:{ id:Date.now()+"", type:"polygon" }
+  });
+
+  points=[];
+  drawing=false;
+  render();
+});
+
+function renderTemp(){
+  shapes.clearLayers();
+
+  let latlngs = points.map(c=>[c[1],c[0]]);
+  if(latlngs.length>1)
+    L.polygon(latlngs).addTo(shapes);
+}
+
+// ---------- SAVE ----------
+function saveGeoJSON(){
+  let blob=new Blob([JSON.stringify(geojson)],{type:"application/json"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="field.geojson";
+  a.click();
+}
+
+// ---------- DAILY REPORT ----------
+let editingReport=null;
+
+function openReport(){
+  document.getElementById("reportDialog").showModal();
+}
+
+function closeReport(){
+  document.getElementById("reportDialog").close();
+}
+
+function saveReport(){
+  let date=document.getElementById("reportDate").value;
+  let text=document.getElementById("reportText").value;
+
+  if(editingReport){
+    let f=geojson.features.find(x=>x.properties.id===editingReport);
+    f.properties.date=date;
+    f.properties.text=text;
+  } else {
+    geojson.features.push({
+      type:"Feature",
+      geometry:null,
+      properties:{
+        id:Date.now()+"",
+        type:"daily-report",
+        date:date,
+        text:text
+      }
+    });
+  }
+
+  closeReport();
+}
+</script>
+
+</body>
+</html>
