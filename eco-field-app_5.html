@@ -1,263 +1,447 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Eco Field Notebook</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
-body, html { margin:0; height:100%; font-family:Arial; }
-#map { position:absolute; top:0; left:0; right:0; bottom:0; }
+/* ✅ SAME STYLE AS YOUR ORIGINAL + FIXED CROSSHAIR */
+
+:root {
+  --forest:#17382f;
+  --forest-2:#225244;
+  --moss:#6f9b78;
+  --moss-light:#dcebdd;
+  --paper:#fffaf0;
+}
+
+html,body {
+  margin:0;
+  height:100%;
+  overflow:hidden;
+  font-family:Segoe UI;
+}
+
+#map {
+  position:absolute;
+  inset:0;
+}
+
+/* ✅ UPDATED CROSSHAIR (aligned with form) */
+.crosshair {
+  position:absolute;
+  bottom:150px;
+  left:50%;
+  transform:translateX(-50%);
+  width:36px;
+  height:36px;
+  z-index:1000;
+}
+
+.crosshair::before,
+.crosshair::after {
+  content:"";
+  position:absolute;
+  background:#c66e45;
+}
+
+.crosshair::before{
+  width:36px;
+  height:3px;
+  top:16px;
+}
+.crosshair::after{
+  width:3px;
+  height:36px;
+  left:16px;
+}
+
+/* buttons */
+.btn{
+  background:var(--forest);
+  color:white;
+  border:none;
+  padding:10px;
+  margin:5px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
 .panel {
   position:absolute;
   bottom:20px;
   left:50%;
   transform:translateX(-50%);
+  z-index:1000;
   background:white;
   padding:10px;
-  border-radius:10px;
-  z-index:999;
+  border-radius:12px;
 }
-.crosshair {
-  position:absolute;
-  bottom:100px;
-  left:50%;
-  transform:translateX(-50%);
-  width:30px;
-  height:30px;
-  z-index:999;
-}
-.crosshair::before,
-.crosshair::after {
-  content:"";
-  position:absolute;
-  background:red;
-}
-.crosshair::before { width:30px; height:2px; top:14px; }
-.crosshair::after { height:30px; width:2px; left:14px; }
 
-button { margin:5px; }
+/* dialog */
+dialog {
+  border:none;
+  padding:20px;
+  border-radius:14px;
+}
 </style>
 </head>
 
 <body>
 
 <div id="map"></div>
-
 <div class="crosshair"></div>
 
 <div class="panel">
-  <button onclick="addObservation()">Add Observation</button>
-  <button onclick="saveGeoJSON()">Save File</button>
-  <button onclick="openReport()">Daily Report</button>
+  <button class="btn" id="addObs">Add Observation</button>
+  <button class="btn" id="drawPoly">Draw Area</button>
+  <button class="btn" id="drawLine">Draw Route</button>
+  <button class="btn" id="dailyBtn">Daily Report</button>
+  <button class="btn" id="saveBtn">Save</button>
 </div>
 
-<dialog id="reportDialog">
-  <h3>Daily Report</h3>
-  <input type="date" id="reportDate"><br><br>
-  <textarea id="reportText" rows="4" cols="30"></textarea><br><br>
-  <button onclick="saveReport()">Save</button>
-  <button onclick="closeReport()">Close</button>
+<!-- DAILY REPORT -->
+<dialog id="dailyDialog">
+<h3>Daily Report</h3>
+<input id="repDate" type="date"><br><br>
+<textarea id="repText" style="width:100%"></textarea><br><br>
+
+<button class="btn" id="repSave">Save</button>
+<button class="btn" onclick="dailyDialog.close()">Close</button>
 </dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-let map = L.map('map').setView([52.44, 4.83], 13);
+// ---------- MAP ----------
+let map = L.map("map", {
+  zoomControl:true,
+  doubleClickZoom:false
+}).setView([52.442,4.829],13);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom:19
+}).addTo(map);
 
-let geojson = { type:"FeatureCollection", features:[] };
-let markers = L.layerGroup().addTo(map);
-let shapes = L.layerGroup().addTo(map);
+// ---------- DATA ----------
+let geojsonData = {
+  type:"FeatureCollection",
+  features:[]
+};
 
-let editMarkers = [];
-let editingFeature = null;
+let markerLayer = L.layerGroup().addTo(map);
+let shapeLayer = L.layerGroup().addTo(map);
+let tempLayer = L.layerGroup().addTo(map);
 
 // ---------- ADD OBSERVATION ----------
-function addObservation() {
+document.getElementById("addObs").onclick = () => {
 
-  const centerPoint = [
-    map.getSize().x/2,
-    map.getSize().y - 120
-  ];
+  // ✅ FIXED CROSSHAIR POSITION (IMPORTANT)
+  const point = map.containerPointToLatLng([
+    map.getSize().x / 2,
+    map.getSize().y - 150
+  ]);
 
-  const latlng = map.containerPointToLatLng(centerPoint);
-
-  const feature = {
+  geojsonData.features.push({
     type:"Feature",
-    geometry:{ type:"Point", coordinates:[latlng.lng, latlng.lat] },
+    geometry:{
+      type:"Point",
+      coordinates:[point.lng,point.lat]
+    },
     properties:{
-      id:Date.now()+"",
-      type:"observation"
+      id:crypto.randomUUID(),
+      featureType:"Point observation",
+      createdAt:new Date().toISOString()
     }
-  };
+  });
 
-  geojson.features.push(feature);
-  render();
+  renderAll();
+};
+
+// ---------- DRAW STATE ----------
+let drawMode = null;
+let drawPoints = [];
+
+// ---------- DRAW BUTTONS ----------
+document.getElementById("drawPoly").onclick = () => {
+  drawMode = "Polygon";
+  drawPoints = [];
+};
+
+document.getElementById("drawLine").onclick = () => {
+  drawMode = "LineString";
+  drawPoints = [];
+};
+
+// ---------- MAP CLICK ----------
+map.on("click", e => {
+  if(!drawMode) return;
+
+  drawPoints.push(e.latlng);
+  drawTemp();
+});
+
+// ---------- FINISH DRAW ----------
+map.on("dblclick", () => {
+  if(!drawMode) return;
+
+  if(drawMode==="Polygon" && drawPoints.length<3) return;
+  if(drawMode==="LineString" && drawPoints.length<2) return;
+
+  const coords = drawPoints.map(p=>[p.lng,p.lat]);
+
+  const geometry = drawMode==="Polygon"
+    ? { type:"Polygon", coordinates:[[...coords,coords[0]]] }
+    : { type:"LineString", coordinates:coords };
+
+  geojsonData.features.push({
+    type:"Feature",
+    geometry,
+    properties:{
+      id:crypto.randomUUID(),
+      featureType:drawMode
+    }
+  });
+
+  drawMode=null;
+  drawPoints=[];
+  tempLayer.clearLayers();
+  renderAll();
+});
+
+// ---------- TEMP DRAW PREVIEW ----------
+function drawTemp(){
+  tempLayer.clearLayers();
+
+  if(drawPoints.length<2) return;
+
+  if(drawMode==="Polygon"){
+    L.polygon(drawPoints,{color:"orange"}).addTo(tempLayer);
+  }
+  if(drawMode==="LineString"){
+    L.polyline(drawPoints,{color:"blue"}).addTo(tempLayer);
+  }
 }
 
 // ---------- RENDER ----------
-function render() {
-  markers.clearLayers();
-  shapes.clearLayers();
+function renderAll(){
+  markerLayer.clearLayers();
+  shapeLayer.clearLayers();
 
-  geojson.features.forEach(f=>{
-
+  geojsonData.features.forEach(f=>{
     if(!f.geometry) return;
 
     if(f.geometry.type==="Point"){
-      let m = L.marker([f.geometry.coordinates[1], f.geometry.coordinates[0]])
-        .addTo(markers);
-
-      m.bindPopup(`
-        Point
-        <br>
-        <button onclick="editFeature('${f.properties.id}')">Edit</button>
-        <button onclick="deleteFeature('${f.properties.id}')">Delete</button>
-      `);
+      renderPoint(f);
     }
 
     if(f.geometry.type==="Polygon"){
-      let latlngs = f.geometry.coordinates[0].map(c=>[c[1], c[0]]);
-      let p = L.polygon(latlngs).addTo(shapes);
+      renderPolygon(f);
+    }
 
-      p.bindPopup(`
-        Polygon
-        <br>
-        <button onclick="editFeature('${f.properties.id}')">Edit</button>
-        <button onclick="deleteFeature('${f.properties.id}')">Delete</button>
-      `);
+    if(f.geometry.type==="LineString"){
+      renderLine(f);
     }
   });
 }
 
-// ---------- EDIT ----------
-window.editFeature = function(id){
+// ---------- RENDER POINT ----------
+function renderPoint(f){
+  const c = f.geometry.coordinates;
 
-  let f = geojson.features.find(x=>x.properties.id===id);
-  if(!f) return;
+  const m = L.circleMarker([c[1],c[0]],{
+    radius:8,
+    color:"#73508a",
+    fillColor:"#a681ba",
+    fillOpacity:0.9
+  }).addTo(markerLayer);
 
-  editingFeature = f;
+  m.bindPopup(`
+    Point<br>
+    <button onclick="startEdit('${f.properties.id}')">Edit</button>
+    <button onclick="deleteFeature('${f.properties.id}')">Delete</button>
+  `);
+}
 
-  editMarkers.forEach(m=>map.removeLayer(m));
-  editMarkers=[];
+// ---------- RENDER POLYGON ----------
+function renderPolygon(f){
+  const latlngs = f.geometry.coordinates[0].map(c=>[c[1],c[0]]);
 
-  if(f.geometry.type==="Point"){
-    let c=f.geometry.coordinates;
-    let m=L.marker([c[1],c[0]],{draggable:true}).addTo(map);
+  const p = L.polygon(latlngs,{color:"green"}).addTo(shapeLayer);
 
-    m.on("dragend",()=>{
-      let pos=m.getLatLng();
-      f.geometry.coordinates=[pos.lng,pos.lat];
-      render();
+  p.bindPopup(`
+    Polygon<br>
+    <button onclick="startEdit('${f.properties.id}')">Edit</button>
+    <button onclick="deleteFeature('${f.properties.id}')">Delete</button>
+  `);
+}
+
+// ---------- RENDER LINE ----------
+function renderLine(f){
+  const latlngs = f.geometry.coordinates.map(c=>[c[1],c[0]]);
+
+  const l = L.polyline(latlngs,{color:"blue",weight:4}).addTo(shapeLayer);
+
+  l.bindPopup(`
+    Line<br>
+    <button onclick="startEdit('${f.properties.id}')">Edit</button>
+    <button onclick="deleteFeature('${f.properties.id}')">Delete</button>
+  `);
+}
+
+// ---------- EDIT SYSTEM ----------
+let editMarkers = [];
+let editingId = null;
+
+window.startEdit = function(id){
+  const feature = geojsonData.features.find(f => f.properties.id === id);
+  if(!feature) return;
+
+  editingId = id;
+
+  editMarkers.forEach(m => map.removeLayer(m));
+  editMarkers = [];
+
+  // ---------- POINT ----------
+  if(feature.geometry.type === "Point"){
+    const c = feature.geometry.coordinates;
+
+    const marker = L.marker([c[1], c[0]], { draggable:true }).addTo(map);
+
+    marker.on("dragend", () => {
+      const pos = marker.getLatLng();
+
+      feature.geometry.coordinates = [pos.lng, pos.lat];
+      feature.properties.updatedAt = new Date().toISOString();
+
+      renderAll();
     });
 
-    editMarkers.push(m);
+    editMarkers.push(marker);
     return;
   }
 
-  let coords = f.geometry.coordinates[0];
+  // ---------- POLY / LINE ----------
+  const coords =
+    feature.geometry.type === "Polygon"
+      ? feature.geometry.coordinates[0]
+      : feature.geometry.coordinates;
 
-  coords.forEach((c,i)=>{
-    let m=L.marker([c[1],c[0]],{draggable:true}).addTo(map);
+  coords.forEach((coord, i) => {
+    const marker = L.marker([coord[1], coord[0]], { draggable:true }).addTo(map);
 
-    m.on("drag",()=>{
-      let pos=m.getLatLng();
-      coords[i]=[pos.lng,pos.lat];
-      render();
+    // live update
+    marker.on("drag", () => {
+      const pos = marker.getLatLng();
+      coords[i] = [pos.lng, pos.lat];
+      renderAll();
     });
 
-    editMarkers.push(m);
+    marker.on("dragend", () => {
+      feature.properties.updatedAt = new Date().toISOString();
+    });
+
+    editMarkers.push(marker);
   });
-}
+};
 
 // ---------- DELETE ----------
 window.deleteFeature = function(id){
-  geojson.features = geojson.features.filter(f=>f.properties.id!==id);
-  render();
-}
+  if(!confirm("Delete feature?")) return;
 
-// ---------- DRAW POLYGON ----------
-let drawing=false;
-let points=[];
+  geojsonData.features =
+    geojsonData.features.filter(f => f.properties.id !== id);
 
-map.on("click",function(e){
-  if(!drawing) return;
-  points.push([e.latlng.lng, e.latlng.lat]);
-  renderTemp();
-});
-
-map.on("dblclick",function(){
-  if(points.length<3) return;
-
-  geojson.features.push({
-    type:"Feature",
-    geometry:{
-      type:"Polygon",
-      coordinates:[[...points, points[0]]]
-    },
-    properties:{ id:Date.now()+"", type:"polygon" }
-  });
-
-  points=[];
-  drawing=false;
-  render();
-});
-
-function renderTemp(){
-  shapes.clearLayers();
-
-  let latlngs = points.map(c=>[c[1],c[0]]);
-  if(latlngs.length>1)
-    L.polygon(latlngs).addTo(shapes);
-}
+  renderAll();
+};
 
 // ---------- SAVE ----------
-function saveGeoJSON(){
-  let blob=new Blob([JSON.stringify(geojson)],{type:"application/json"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="field.geojson";
+document.getElementById("saveBtn").onclick = () => {
+  const blob = new Blob(
+    [JSON.stringify(geojsonData, null, 2)],
+    { type:"application/json" }
+  );
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "eco-field-project.geojson";
   a.click();
-}
+};
 
-// ---------- DAILY REPORT ----------
-let editingReport=null;
+// ---------- DAILY REPORT SYSTEM ----------
+let editingReportId = null;
 
-function openReport(){
-  document.getElementById("reportDialog").showModal();
-}
+document.getElementById("dailyBtn").onclick = () => {
+  editingReportId = null;
+  document.getElementById("repDate").value = new Date().toISOString().split("T")[0];
+  document.getElementById("repText").value = "";
+  document.getElementById("dailyDialog").showModal();
+};
 
-function closeReport(){
-  document.getElementById("reportDialog").close();
-}
+// ---------- SAVE REPORT ----------
+document.getElementById("repSave").onclick = () => {
 
-function saveReport(){
-  let date=document.getElementById("reportDate").value;
-  let text=document.getElementById("reportText").value;
+  const date = document.getElementById("repDate").value;
+  const text = document.getElementById("repText").value;
 
-  if(editingReport){
-    let f=geojson.features.find(x=>x.properties.id===editingReport);
-    f.properties.date=date;
-    f.properties.text=text;
+  if(!date || !text){
+    alert("Fill in report");
+    return;
+  }
+
+  if(editingReportId){
+    // EDIT EXISTING
+    const report = geojsonData.features.find(f => f.properties.id === editingReportId);
+    if(report){
+      report.properties.date = date;
+      report.properties.text = text;
+      report.properties.updatedAt = new Date().toISOString();
+    }
   } else {
-    geojson.features.push({
+    // CREATE NEW
+    geojsonData.features.push({
       type:"Feature",
       geometry:null,
       properties:{
-        id:Date.now()+"",
-        type:"daily-report",
+        id:crypto.randomUUID(),
+        featureType:"Daily report",
         date:date,
-        text:text
+        text:text,
+        createdAt:new Date().toISOString()
       }
     });
   }
 
-  closeReport();
-}
+  document.getElementById("dailyDialog").close();
+};
+
+// ---------- OPTIONAL: EDIT REPORT ----------
+window.editReport = function(id){
+  const report = geojsonData.features.find(f => f.properties.id === id);
+  if(!report) return;
+
+  editingReportId = id;
+
+  document.getElementById("repDate").value = report.properties.date;
+  document.getElementById("repText").value = report.properties.text;
+
+  document.getElementById("dailyDialog").showModal();
+};
+
+// ---------- OPTIONAL: DELETE REPORT ----------
+window.deleteReport = function(id){
+  if(!confirm("Delete report?")) return;
+
+  geojsonData.features =
+    geojsonData.features.filter(f => f.properties.id !== id);
+};
+
+// ---------- INIT RENDER ----------
+renderAll();
 </script>
 
 </body>
