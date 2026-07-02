@@ -346,6 +346,43 @@
       box-shadow: 0 18px 42px rgba(152, 77, 49, 0.4);
     }
 
+    .draw-hint {
+      position: absolute;
+      top: 22px;
+      left: 50%;
+      z-index: 820;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 13px;
+      border-radius: 999px;
+      background: rgba(255, 250, 240, 0.95);
+      border: 1px solid var(--border);
+      color: var(--forest);
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: var(--soft-shadow);
+    }
+
+    .draw-hint button {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .draw-hint .finish {
+      background: var(--forest);
+      color: white;
+    }
+
+    .draw-hint .cancel {
+      background: #f4d4ca;
+      color: #7e3324;
+    }
+
     .observation-form-panel {
       position: absolute;
       left: 50%;
@@ -685,19 +722,9 @@
       <div class="sidebar-section">
         <h3>Tools</h3>
 
-        <button id="projectSummaryBtn" class="sidebar-button secondary" type="button">
-          <span>Project Summary</span>
-          <span>▦</span>
-        </button>
-
         <button id="toggleFiltersBtn" class="sidebar-button secondary" type="button">
           <span>Show filters</span>
           <span>▾</span>
-        </button>
-
-        <button id="instructionsBtn" class="sidebar-button" type="button">
-          <span>Instructions</span>
-          <span>?</span>
         </button>
 
         <button id="closeProjectBtn" class="sidebar-button danger" type="button">
@@ -725,7 +752,7 @@
         </button>
 
         <p class="small-help">
-          Click on the map to add vertices. Use Finish to save or Cancel to stop drawing.
+          Click on the map to add vertices. Double-click to finish or press Escape to cancel.
         </p>
       </div>
 
@@ -741,21 +768,6 @@
           </select>
         </div>
 
-        <div class="filter-row">
-          <label for="filterSpecies">Species contains</label>
-          <input id="filterSpecies" type="text" placeholder="e.g. pipistrelle, owl" />
-        </div>
-
-        <div class="filter-row">
-          <label for="filterDate">Date</label>
-          <input id="filterDate" type="date" />
-        </div>
-
-        <div class="filter-row">
-          <label for="filterComment">Comment contains</label>
-          <input id="filterComment" type="text" placeholder="Search comments" />
-        </div>
-
         <button id="clearFiltersBtn" class="sidebar-button secondary" type="button">
           <span>Clear filters</span>
           <span>↺</span>
@@ -763,46 +775,51 @@
       </div>
     </aside>
 
+    <div id="drawHint" class="draw-hint hidden">
+      <span id="drawHintText">Drawing...</span>
+      <button id="finishDrawBtn" class="finish" type="button">Finish</button>
+      <button id="cancelDrawBtn" class="cancel" type="button">Cancel</button>
+    </div>
+
     <div id="observationFormPanel" class="observation-form-panel hidden">
       <div class="form-left">
         <div class="form-header">
-          <h3>New Observation</h3>
-          <span class="coordinates-small" id="coordsDisplay">Select location on map</span>
+          <h3>New point observation</h3>
+          <span class="coordinates-small" id="coordsDisplay">Lat --, Lng --</span>
         </div>
 
         <div class="form-grid">
           <div class="form-field">
-            <label for="obsDate">Date</label>
-            <input id="obsDate" type="date" />
-          </div>
-
-          <div class="form-field">
-            <label for="obsSpecies">Species</label>
-            <input id="obsSpecies" type="text" placeholder="e.g. Common pipistrelle" />
-          </div>
-
-          <div class="form-field">
-            <label for="obsCount">Count</label>
-            <input id="obsCount" type="number" placeholder="1" />
-          </div>
-
-          <div class="form-field">
             <label for="obsGroup">Group</label>
-            <select id="obsGroup">
-              <option value="">Select</option>
+            <select id="obsGroup" required>
               <option value="Bat">Bat</option>
               <option value="Bird">Bird</option>
             </select>
           </div>
 
+          <div class="form-field">
+            <label for="obsSpecies">Species</label>
+            <select id="obsSpecies" required></select>
+          </div>
+
+          <div class="form-field">
+            <label for="obsDate">Date</label>
+            <input id="obsDate" type="date" required />
+          </div>
+
+          <div class="form-field">
+            <label for="obsTime">Time</label>
+            <input id="obsTime" type="time" required />
+          </div>
+
           <div class="form-field comments-field">
-            <label for="obsComment">Comment</label>
-            <textarea id="obsComment" placeholder="Add notes about the observation..."></textarea>
+            <label for="obsComments">Comments</label>
+            <textarea id="obsComments" placeholder="Behaviour, weather, count, habitat, confidence..."></textarea>
           </div>
         </div>
 
         <div class="form-actions">
-          <button class="save-btn" id="saveObservationBtn" type="button">Save Observation</button>
+          <button class="save-btn" id="saveObservationBtn" type="button">Save observation</button>
           <button class="cancel-btn" id="cancelObservationBtn" type="button">Cancel</button>
         </div>
       </div>
@@ -823,11 +840,15 @@
     // ==================================================
     let map = null;
     let formMap = null;
-    let formMapListener = null;
     let currentCoordinates = null;
     let projectFileHandle = null;
     let projectFileName = "eco-field-project.geojson";
     let geojsonData = null;
+    let drawingMode = false;
+    let drawnItems = [];
+    let mainMapZoom = 13;
+    let mainMapLat = 51.5;
+    let mainMapLng = -0.09;
 
     // ==================================================
     // DOM ELEMENTS
@@ -839,31 +860,35 @@
     const sidebarToggle = document.getElementById("sidebarToggle");
     const sidebar = document.getElementById("sidebar");
     const projectNameBox = document.getElementById("projectNameBox");
-    const projectSummaryBtn = document.getElementById("projectSummaryBtn");
     const toggleFiltersBtn = document.getElementById("toggleFiltersBtn");
-    const instructionsBtn = document.getElementById("instructionsBtn");
     const closeProjectBtn = document.getElementById("closeProjectBtn");
     const drawResearchAreaBtn = document.getElementById("drawResearchAreaBtn");
     const drawObservationAreaBtn = document.getElementById("drawObservationAreaBtn");
     const drawSurveyLineBtn = document.getElementById("drawSurveyLineBtn");
     const filterPanel = document.getElementById("filterPanel");
-    const filterGroup = document.getElementById("filterGroup");
-    const filterSpecies = document.getElementById("filterSpecies");
-    const filterDate = document.getElementById("filterDate");
-    const filterComment = document.getElementById("filterComment");
     const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+    const filterGroup = document.getElementById("filterGroup");
     const observationFormPanel = document.getElementById("observationFormPanel");
-    const obsDate = document.getElementById("obsDate");
-    const obsSpecies = document.getElementById("obsSpecies");
-    const obsCount = document.getElementById("obsCount");
     const obsGroup = document.getElementById("obsGroup");
-    const obsComment = document.getElementById("obsComment");
+    const obsSpecies = document.getElementById("obsSpecies");
+    const obsDate = document.getElementById("obsDate");
+    const obsTime = document.getElementById("obsTime");
+    const obsComments = document.getElementById("obsComments");
     const saveObservationBtn = document.getElementById("saveObservationBtn");
     const cancelObservationBtn = document.getElementById("cancelObservationBtn");
     const coordsDisplay = document.getElementById("coordsDisplay");
     const toast = document.getElementById("toast");
+    const drawHint = document.getElementById("drawHint");
+    const drawHintText = document.getElementById("drawHintText");
+    const finishDrawBtn = document.getElementById("finishDrawBtn");
+    const cancelDrawBtn = document.getElementById("cancelDrawBtn");
 
     const supportsFileSystemAccess = !!window.showOpenFilePicker;
+
+    const speciesData = {
+      Bat: ["Common pipistrelle", "Soprano pipistrelle", "Nathusius' pipistrelle", "Brown long-eared bat", "Daubenton's bat"],
+      Bird: ["Great tit", "Blue tit", "Robin", "Blackbird", "Song thrush"]
+    };
 
     // ==================================================
     // UTILITY FUNCTIONS
@@ -876,61 +901,74 @@
       }, 3000);
     }
 
+    function populateSpeciesSelect(speciesSelect, group) {
+      speciesSelect.innerHTML = '<option value="">Select species</option>';
+      if (speciesData[group]) {
+        speciesData[group].forEach(species => {
+          const option = document.createElement("option");
+          option.value = species;
+          option.textContent = species;
+          speciesSelect.appendChild(option);
+        });
+      }
+    }
+
     // ==================================================
     // FORM MAP FUNCTIONS
     // ==================================================
     function initFormMap() {
       if (formMap) {
-        formMap.off("click", formMapListener);
+        formMap.remove();
       }
 
       const container = document.getElementById("formMap");
       if (!container) return;
 
-      formMap = L.map(container).setView([51.5, -0.09], 13);
+      formMap = L.map(container).setView([mainMapLat, mainMapLng], Math.min(mainMapZoom + 2, 19));
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
         maxZoom: 19,
       }).addTo(formMap);
 
-      // Click listener for coordinates
-      formMapListener = (e) => {
-        const lat = e.latlng.lat.toFixed(6);
-        const lng = e.latlng.lng.toFixed(6);
-        currentCoordinates = [lng, lat];
-        coordsDisplay.textContent = `${lat}, ${lng}`;
-        showToast("Location selected: " + lat + ", " + lng);
-      };
+      // Update crosshair coordinates on map move
+      formMap.on("move", updateFormMapCrosshair);
 
-      formMap.on("click", formMapListener);
-
-      // Trigger resize to ensure proper rendering
+      // Trigger resize
       setTimeout(() => {
         formMap.invalidateSize();
-      }, 100);
+      }, 50);
+
+      updateFormMapCrosshair();
+    }
+
+    function updateFormMapCrosshair() {
+      if (!formMap) return;
+      const center = formMap.getCenter();
+      currentCoordinates = [center.lng, center.lat];
+      coordsDisplay.textContent = `Lat ${center.lat.toFixed(6)}, Lng ${center.lng.toFixed(6)}`;
     }
 
     function showObservationForm() {
       observationFormPanel.classList.remove("hidden");
-      currentCoordinates = null;
-      coordsDisplay.textContent = "Select location on map";
       obsDate.valueAsDate = new Date();
+      obsTime.value = new Date().toTimeString().slice(0, 5);
+      obsGroup.value = "Bat";
+      populateSpeciesSelect(obsSpecies, "Bat");
 
-      // Initialize the form map if not already done
       if (!formMap) {
         setTimeout(() => {
           initFormMap();
         }, 100);
       } else {
         formMap.invalidateSize();
+        formMap.setView([mainMapLat, mainMapLng], Math.min(mainMapZoom + 2, 19));
       }
     }
 
     function hideObservationForm() {
       observationFormPanel.classList.add("hidden");
       if (formMap) {
-        formMap.off("click", formMapListener);
         formMap.remove();
         formMap = null;
       }
@@ -938,18 +976,18 @@
 
     function saveObservation() {
       if (!currentCoordinates) {
-        showToast("Please select a location on the map");
+        showToast("Please enable form map location");
         return;
       }
 
       const date = obsDate.value;
+      const time = obsTime.value;
       const species = obsSpecies.value;
-      const count = obsCount.value || "1";
       const group = obsGroup.value;
-      const comment = obsComment.value;
+      const comments = obsComments.value;
 
-      if (!date || !species) {
-        showToast("Please fill in date and species");
+      if (!date || !time || !species) {
+        showToast("Please fill in date, time, and species");
         return;
       }
 
@@ -957,14 +995,15 @@
         type: "Feature",
         geometry: {
           type: "Point",
-          coordinates: currentCoordinates,
+          coordinates: [currentCoordinates[0], currentCoordinates[1]],
         },
         properties: {
-          date,
-          species,
-          count,
+          featureType: "Point observation",
           group,
-          comment,
+          species,
+          date,
+          time,
+          comments,
           timestamp: new Date().toISOString(),
         },
       };
@@ -973,6 +1012,79 @@
       saveProjectToDisk();
       hideObservationForm();
       showToast("Observation saved!");
+    }
+
+    // ==================================================
+    // DRAWING FUNCTIONS
+    // ==================================================
+    function startDrawing(name, type) {
+      if (!geojsonData) {
+        showToast("Please open or create a project first");
+        return;
+      }
+
+      drawingMode = true;
+      drawnItems = [];
+      drawHint.classList.remove("hidden");
+      drawHintText.textContent = `Drawing ${name}... Click to add points`;
+      map.dragging.disable();
+
+      map.on("click", function mapClickHandler(e) {
+        drawnItems.push([e.latlng.lat, e.latlng.lng]);
+        L.circleMarker([e.latlng.lat, e.latlng.lng], {
+          radius: 5,
+          color: "#984d31",
+          fillOpacity: 0.8,
+        }).addTo(map);
+      });
+
+      map.on("dblclick", function mapDblClickHandler() {
+        finishDrawing();
+      });
+    }
+
+    function finishDrawing() {
+      if (!drawingMode) return;
+
+      drawingMode = false;
+      drawHint.classList.add("hidden");
+      map.dragging.enable();
+      map.off("click");
+      map.off("dblclick");
+
+      if (drawnItems.length < 2) {
+        showToast("Need at least 2 points to draw");
+        drawnItems = [];
+        return;
+      }
+
+      const coords = drawnItems.map(item => [item[1], item[0]]);
+      const feature = {
+        type: "Feature",
+        geometry: {
+          type: "Polygon",
+          coordinates: [coords],
+        },
+        properties: {
+          featureType: "Area",
+          timestamp: new Date().toISOString(),
+        },
+      };
+
+      geojsonData.features.push(feature);
+      saveProjectToDisk();
+      showToast("Area saved!");
+      drawnItems = [];
+    }
+
+    function cancelDrawing() {
+      drawingMode = false;
+      drawHint.classList.add("hidden");
+      map.dragging.enable();
+      map.off("click");
+      map.off("dblclick");
+      drawnItems = [];
+      showToast("Drawing cancelled");
     }
 
     // ==================================================
@@ -1010,7 +1122,7 @@
           });
 
           projectFileName = projectFileHandle.name || projectFileName;
-          await saveProjectToDisk(false);
+          await saveProjectToDisk();
           openProjectInterface();
           showToast("New GeoJSON project created");
         } catch (error) {
@@ -1022,7 +1134,7 @@
       } else {
         downloadGeoJSON();
         openProjectInterface();
-        showToast("New project created. Updated copies will download automatically.");
+        showToast("New project created");
       }
     }
 
@@ -1044,14 +1156,12 @@
 
           projectFileHandle = handles[0];
           const file = await projectFileHandle.getFile();
-          projectFileName = file.name || "eco-field-project.geojson";
+          projectFileName = file.name;
           const text = await file.text();
-
           loadGeoJSONText(text);
         } catch (error) {
           if (error.name !== "AbortError") {
             console.error(error);
-            alert("Could not open the selected GeoJSON file.");
             fallbackFileInput.click();
           }
         }
@@ -1065,8 +1175,7 @@
       if (!file) return;
 
       projectFileHandle = null;
-      projectFileName = file.name || "eco-field-project.geojson";
-
+      projectFileName = file.name;
       const text = await file.text();
       loadGeoJSONText(text);
       fallbackFileInput.value = "";
@@ -1075,24 +1184,21 @@
     function loadGeoJSONText(text) {
       try {
         const parsed = JSON.parse(text);
-
-        if (!parsed || parsed.type !== "FeatureCollection" || !Array.isArray(parsed.features)) {
-          throw new Error("Invalid GeoJSON FeatureCollection.");
+        if (!parsed || parsed.type !== "FeatureCollection") {
+          throw new Error("Invalid GeoJSON");
         }
-
         geojsonData = parsed;
         openProjectInterface();
-        showToast("GeoJSON project loaded");
+        showToast("Project loaded");
       } catch (error) {
         console.error(error);
-        alert("The selected file is not a valid GeoJSON FeatureCollection.");
+        alert("Invalid GeoJSON file");
       }
     }
 
     function openProjectInterface() {
       startScreen.classList.add("hidden");
-      projectNameBox.textContent = projectFileName;
-      projectNameBox.innerHTML += '<span>Currently editing this project</span>';
+      projectNameBox.innerHTML = projectFileName + '<span>Currently editing</span>';
       sidebar.classList.add("open");
       sidebarToggle.textContent = "×";
       document.getElementById("addObservationBtn")?.classList.remove("hidden");
@@ -1100,7 +1206,6 @@
 
     async function saveProjectToDisk() {
       if (!geojsonData) return;
-
       geojsonData.updatedAt = new Date().toISOString();
       const json = JSON.stringify(geojsonData, null, 2);
 
@@ -1109,9 +1214,7 @@
           const writable = await projectFileHandle.createWritable();
           await writable.write(json);
           await writable.close();
-          showToast("Project saved!");
         } catch (error) {
-          console.error("Could not save to file:", error);
           downloadGeoJSON();
         }
       } else {
@@ -1121,7 +1224,6 @@
 
     function downloadGeoJSON() {
       if (!geojsonData) return;
-
       const json = JSON.stringify(geojsonData, null, 2);
       const blob = new Blob([json], { type: "application/geo+json" });
       const url = URL.createObjectURL(blob);
@@ -1146,50 +1248,53 @@
     }
 
     // ==================================================
-    // SIDEBAR FUNCTIONS
-    // ==================================================
-    function toggleSidebar() {
-      sidebar.classList.toggle("open");
-      sidebarToggle.textContent = sidebar.classList.contains("open") ? "×" : "☰";
-    }
-
-    function toggleFilters() {
-      filterPanel.classList.toggle("hidden");
-    }
-
-    // ==================================================
     // EVENT LISTENERS
     // ==================================================
     createProjectBtn.addEventListener("click", createNewProject);
     openProjectBtn.addEventListener("click", openExistingProject);
-    sidebarToggle.addEventListener("click", toggleSidebar);
-    toggleFiltersBtn.addEventListener("click", toggleFilters);
+    sidebarToggle.addEventListener("click", () => {
+      sidebar.classList.toggle("open");
+      sidebarToggle.textContent = sidebar.classList.contains("open") ? "×" : "☰";
+    });
+    toggleFiltersBtn.addEventListener("click", () => filterPanel.classList.toggle("hidden"));
     closeProjectBtn.addEventListener("click", closeProject);
     saveObservationBtn.addEventListener("click", saveObservation);
     cancelObservationBtn.addEventListener("click", hideObservationForm);
+    finishDrawBtn.addEventListener("click", finishDrawing);
+    cancelDrawBtn.addEventListener("click", cancelDrawing);
 
-    // Observation form button
+    obsGroup.addEventListener("change", (e) => populateSpeciesSelect(obsSpecies, e.target.value));
+
+    drawResearchAreaBtn.addEventListener("click", () => startDrawing("Research area", "Polygon"));
+    drawObservationAreaBtn.addEventListener("click", () => startDrawing("Observation area", "Polygon"));
+    drawSurveyLineBtn.addEventListener("click", () => startDrawing("Survey line", "LineString"));
+
+    clearFiltersBtn.addEventListener("click", () => {
+      filterGroup.value = "";
+    });
+
+    // Observation button
     const addObservationBtn = document.createElement("button");
     addObservationBtn.id = "addObservationBtn";
     addObservationBtn.className = "add-observation-btn hidden";
     addObservationBtn.innerHTML = "+";
-    addObservationBtn.addEventListener("click", () => {
-      if (!geojsonData) {
-        showToast("Please open or create a project first");
-        return;
-      }
-      showObservationForm();
-    });
+    addObservationBtn.addEventListener("click", showObservationForm);
     document.getElementById("app").appendChild(addObservationBtn);
 
     // Initialize main map
     window.addEventListener("DOMContentLoaded", () => {
-      map = L.map("map").setView([51.5, -0.09], 13);
+      map = L.map("map").setView([mainMapLat, mainMapLng], mainMapZoom);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
         maxZoom: 19,
       }).addTo(map);
+
+      map.on("move", () => {
+        mainMapLat = map.getCenter().lat;
+        mainMapLng = map.getCenter().lng;
+        mainMapZoom = map.getZoom();
+      });
     });
   </script>
 </body>
