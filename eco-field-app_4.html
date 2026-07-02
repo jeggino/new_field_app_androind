@@ -1962,7 +1962,9 @@
     async function saveNewObservation(event) {
       event.preventDefault();
 
-      const center = map.getCenter();
+      const center = observationFormMap
+        ? observationFormMap.getCenter()
+        : map.getCenter();
 
       const feature = {
         type: "Feature",
