@@ -1869,6 +1869,53 @@
       }
     }
 
+
+    function initializeObservationFormMap() {
+    
+      const center = map.getCenter();
+    
+      if (!observationFormMap) {
+    
+        observationFormMap = L.map(
+          "observationFormMap",
+          {
+            zoomControl: true
+          }
+        );
+    
+        L.tileLayer(
+          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+          }
+        ).addTo(observationFormMap);
+    
+        observationFormMap.on("move", () => {
+    
+          const c = observationFormMap.getCenter();
+    
+          currentCoordinates.textContent =
+            "Lat " +
+            c.lat.toFixed(6) +
+            ", Lng " +
+            c.lng.toFixed(6);
+    
+        });
+      }
+    
+      observationFormMap.setView(
+        center,
+        Math.max(map.getZoom(), 17)
+      );
+    
+      setTimeout(() => {
+        observationFormMap.invalidateSize();
+      }, 100);
+    }
+
+
+    
     function openCaptureMode() {
       cancelDrawing(false);
 
