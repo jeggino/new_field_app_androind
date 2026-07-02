@@ -330,28 +330,6 @@
       margin: 8px 0 0;
     }
 
-    .gps-btn {
-      position: absolute;
-      left: 18px;
-      bottom: 92px;
-      z-index: 850;
-      width: 58px;
-      height: 58px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(255, 250, 240, 0.96);
-      color: var(--forest);
-      font-size: 25px;
-      font-weight: 900;
-      box-shadow: var(--soft-shadow);
-      border: 1px solid var(--border);
-    }
-
-    .gps-btn.active {
-      background: var(--forest);
-      color: white;
-    }
-
     .add-observation-btn {
       position: absolute;
       right: 28px;
@@ -366,91 +344,6 @@
       font-size: 40px;
       font-weight: 300;
       box-shadow: 0 18px 42px rgba(152, 77, 49, 0.4);
-    }
-
-    .add-observation-btn.active {
-      background: var(--forest);
-    }
-
-    .crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      z-index: 820;
-      width: 36px;
-      height: 36px;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
-
-    .crosshair::before,
-    .crosshair::after {
-      content: "";
-      position: absolute;
-      background: var(--burnt-dark);
-      box-shadow: 0 0 0 3px rgba(255, 250, 240, 0.85);
-      border-radius: 999px;
-    }
-
-    .crosshair::before {
-      width: 36px;
-      height: 3px;
-      top: 16.5px;
-      left: 0;
-    }
-
-    .crosshair::after {
-      width: 3px;
-      height: 36px;
-      left: 16.5px;
-      top: 0;
-    }
-
-    .capture-hint,
-    .draw-hint {
-      position: absolute;
-      left: 50%;
-      z-index: 820;
-      transform: translateX(-50%);
-      padding: 9px 13px;
-      border-radius: 999px;
-      background: rgba(255, 250, 240, 0.95);
-      border: 1px solid var(--border);
-      color: var(--forest);
-      font-size: 12px;
-      font-weight: 900;
-      box-shadow: var(--soft-shadow);
-      white-space: nowrap;
-    }
-
-    .capture-hint {
-      top: calc(50% + 30px);
-      pointer-events: none;
-    }
-
-    .draw-hint {
-      top: 22px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .draw-hint button {
-      border: none;
-      border-radius: 999px;
-      padding: 7px 10px;
-      font-weight: 900;
-      font-size: 12px;
-    }
-
-    .draw-hint .finish {
-      background: var(--forest);
-      color: white;
-    }
-
-    .draw-hint .cancel {
-      background: #f4d4ca;
-      color: #7e3324;
     }
 
     .observation-form-panel {
@@ -615,155 +508,6 @@
       top: 0;
     }
 
-    dialog {
-      border: none;
-      border-radius: 28px;
-      padding: 0;
-      width: min(720px, calc(100% - 28px));
-      max-height: calc(100vh - 36px);
-      background: var(--paper);
-      color: var(--ink);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    dialog::backdrop {
-      background: rgba(23, 56, 47, 0.48);
-      backdrop-filter: blur(5px);
-    }
-
-    .dialog-header {
-      padding: 18px 20px;
-      background: linear-gradient(135deg, var(--forest), var(--forest-2));
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .dialog-header h2 {
-      margin: 0;
-      font-size: 20px;
-    }
-
-    .dialog-close {
-      width: 36px;
-      height: 36px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.16);
-      color: white;
-      font-size: 22px;
-    }
-
-    .dialog-body {
-      padding: 20px;
-      line-height: 1.6;
-      max-height: calc(100vh - 155px);
-      overflow-y: auto;
-    }
-
-    .dialog-body ul {
-      margin-top: 8px;
-      padding-left: 22px;
-    }
-
-    .dialog-body li {
-      margin-bottom: 8px;
-    }
-
-    .edit-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .edit-grid .full {
-      grid-column: 1 / -1;
-    }
-
-    .dialog-footer {
-      padding: 0 20px 20px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-    }
-
-    .summary-stats {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-      margin-bottom: 18px;
-    }
-
-    .stat-card {
-      padding: 13px;
-      border-radius: 16px;
-      background: rgba(111, 155, 120, 0.14);
-      border: 1px solid var(--border);
-    }
-
-    .stat-card strong {
-      display: block;
-      font-size: 26px;
-      color: var(--forest);
-    }
-
-    .stat-card span {
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .chart-box {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 18px;
-    }
-
-    .chart-row {
-      display: grid;
-      grid-template-columns: 155px 1fr 38px;
-      gap: 8px;
-      align-items: center;
-      font-size: 13px;
-    }
-
-    .chart-label {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      color: var(--ink);
-      font-weight: 800;
-    }
-
-    .chart-track {
-      height: 14px;
-      border-radius: 999px;
-      background: rgba(23, 56, 47, 0.1);
-      overflow: hidden;
-    }
-
-    .chart-bar {
-      height: 100%;
-      min-width: 3px;
-      border-radius: 999px;
-      background: var(--forest);
-    }
-
-    .chart-count {
-      color: var(--muted);
-      font-weight: 900;
-      text-align: right;
-    }
-
-    .empty-chart {
-      color: var(--muted);
-      font-style: italic;
-      font-size: 14px;
-    }
-
     .toast {
       position: absolute;
       top: 24px;
@@ -785,43 +529,6 @@
     .toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
-    }
-
-    .popup-title {
-      font-weight: 900;
-      color: var(--forest);
-      margin-bottom: 6px;
-    }
-
-    .popup-line {
-      margin: 3px 0;
-      font-size: 13px;
-      color: var(--ink);
-    }
-
-    .popup-actions {
-      display: flex;
-      gap: 7px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
-
-    .popup-actions button {
-      border: none;
-      border-radius: 10px;
-      padding: 7px 10px;
-      font-weight: 900;
-      font-size: 12px;
-    }
-
-    .popup-edit {
-      background: var(--moss-light);
-      color: var(--forest);
-    }
-
-    .popup-delete {
-      background: #f5d0c5;
-      color: #843b2c;
     }
 
     @media (max-width: 1200px) {
@@ -893,8 +600,7 @@
         padding: 12px;
       }
 
-      .form-grid,
-      .edit-grid {
+      .form-grid {
         grid-template-columns: 1fr;
       }
 
@@ -912,31 +618,6 @@
         bottom: 20px;
         width: 66px;
         height: 66px;
-      }
-
-      .gps-btn {
-        left: 18px;
-        bottom: 92px;
-        width: 54px;
-        height: 54px;
-      }
-
-      .draw-hint {
-        top: 84px;
-        max-width: calc(100vw - 20px);
-        white-space: normal;
-        border-radius: 18px;
-        flex-wrap: wrap;
-        justify-content: center;
-        text-align: center;
-      }
-
-      .summary-stats {
-        grid-template-columns: 1fr;
-      }
-
-      .chart-row {
-        grid-template-columns: 105px 1fr 30px;
       }
 
       .form-map-container {
@@ -1082,7 +763,6 @@
       </div>
     </aside>
 
-    <!-- Observation Form Panel with Embedded Map -->
     <div id="observationFormPanel" class="observation-form-panel hidden">
       <div class="form-left">
         <div class="form-header">
@@ -1127,40 +807,68 @@
         </div>
       </div>
 
-      <!-- Embedded Map with Crosshair -->
       <div class="form-map-container">
         <div id="formMap"></div>
         <div class="form-map-crosshair"></div>
       </div>
     </div>
 
-    <!-- Capture Hint -->
-    <div class="capture-hint">Click on the map to capture coordinates</div>
-
-    <!-- Toast Notification -->
     <div id="toast" class="toast"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // =============================================
-    // MAIN APPLICATION STATE
-    // =============================================
-    const APP = {
-      projectFile: null,
-      geoData: null,
-      mainMap: null,
-      formMap: null,
-      isCapturing: false,
-      currentCoordinates: null,
-      formMapListener: null,
-    };
+    // ==================================================
+    // APPLICATION STATE
+    // ==================================================
+    let map = null;
+    let formMap = null;
+    let formMapListener = null;
+    let currentCoordinates = null;
+    let projectFileHandle = null;
+    let projectFileName = "eco-field-project.geojson";
+    let geojsonData = null;
 
-    // =============================================
+    // ==================================================
+    // DOM ELEMENTS
+    // ==================================================
+    const startScreen = document.getElementById("startScreen");
+    const createProjectBtn = document.getElementById("createProjectBtn");
+    const openProjectBtn = document.getElementById("openProjectBtn");
+    const fallbackFileInput = document.getElementById("fallbackFileInput");
+    const sidebarToggle = document.getElementById("sidebarToggle");
+    const sidebar = document.getElementById("sidebar");
+    const projectNameBox = document.getElementById("projectNameBox");
+    const projectSummaryBtn = document.getElementById("projectSummaryBtn");
+    const toggleFiltersBtn = document.getElementById("toggleFiltersBtn");
+    const instructionsBtn = document.getElementById("instructionsBtn");
+    const closeProjectBtn = document.getElementById("closeProjectBtn");
+    const drawResearchAreaBtn = document.getElementById("drawResearchAreaBtn");
+    const drawObservationAreaBtn = document.getElementById("drawObservationAreaBtn");
+    const drawSurveyLineBtn = document.getElementById("drawSurveyLineBtn");
+    const filterPanel = document.getElementById("filterPanel");
+    const filterGroup = document.getElementById("filterGroup");
+    const filterSpecies = document.getElementById("filterSpecies");
+    const filterDate = document.getElementById("filterDate");
+    const filterComment = document.getElementById("filterComment");
+    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
+    const observationFormPanel = document.getElementById("observationFormPanel");
+    const obsDate = document.getElementById("obsDate");
+    const obsSpecies = document.getElementById("obsSpecies");
+    const obsCount = document.getElementById("obsCount");
+    const obsGroup = document.getElementById("obsGroup");
+    const obsComment = document.getElementById("obsComment");
+    const saveObservationBtn = document.getElementById("saveObservationBtn");
+    const cancelObservationBtn = document.getElementById("cancelObservationBtn");
+    const coordsDisplay = document.getElementById("coordsDisplay");
+    const toast = document.getElementById("toast");
+
+    const supportsFileSystemAccess = !!window.showOpenFilePicker;
+
+    // ==================================================
     // UTILITY FUNCTIONS
-    // =============================================
+    // ==================================================
     function showToast(message) {
-      const toast = document.getElementById("toast");
       toast.textContent = message;
       toast.classList.add("show");
       setTimeout(() => {
@@ -1168,79 +876,77 @@
       }, 3000);
     }
 
-    // =============================================
+    // ==================================================
     // FORM MAP FUNCTIONS
-    // =============================================
+    // ==================================================
     function initFormMap() {
-      if (APP.formMap) {
-        APP.formMap.off("click", APP.formMapListener);
+      if (formMap) {
+        formMap.off("click", formMapListener);
       }
 
       const container = document.getElementById("formMap");
       if (!container) return;
 
-      APP.formMap = L.map(container).setView([51.5, -0.09], 13);
+      formMap = L.map(container).setView([51.5, -0.09], 13);
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap contributors",
         maxZoom: 19,
-      }).addTo(APP.formMap);
+      }).addTo(formMap);
 
       // Click listener for coordinates
-      APP.formMapListener = (e) => {
+      formMapListener = (e) => {
         const lat = e.latlng.lat.toFixed(6);
         const lng = e.latlng.lng.toFixed(6);
-        APP.currentCoordinates = [lng, lat];
-        document.getElementById("coordsDisplay").textContent = `${lat}, ${lng}`;
+        currentCoordinates = [lng, lat];
+        coordsDisplay.textContent = `${lat}, ${lng}`;
         showToast("Location selected: " + lat + ", " + lng);
       };
 
-      APP.formMap.on("click", APP.formMapListener);
+      formMap.on("click", formMapListener);
 
       // Trigger resize to ensure proper rendering
       setTimeout(() => {
-        APP.formMap.invalidateSize();
+        formMap.invalidateSize();
       }, 100);
     }
 
     function showObservationForm() {
-      const formPanel = document.getElementById("observationFormPanel");
-      formPanel.classList.remove("hidden");
-      APP.currentCoordinates = null;
-      document.getElementById("coordsDisplay").textContent = "Select location on map";
-      document.getElementById("obsDate").valueAsDate = new Date();
+      observationFormPanel.classList.remove("hidden");
+      currentCoordinates = null;
+      coordsDisplay.textContent = "Select location on map";
+      obsDate.valueAsDate = new Date();
 
       // Initialize the form map if not already done
-      if (!APP.formMap) {
+      if (!formMap) {
         setTimeout(() => {
           initFormMap();
         }, 100);
       } else {
-        APP.formMap.invalidateSize();
+        formMap.invalidateSize();
       }
     }
 
     function hideObservationForm() {
-      const formPanel = document.getElementById("observationFormPanel");
-      formPanel.classList.add("hidden");
-      if (APP.formMap) {
-        APP.formMap.off("click", APP.formMapListener);
-        APP.formMap.remove();
-        APP.formMap = null;
+      observationFormPanel.classList.add("hidden");
+      if (formMap) {
+        formMap.off("click", formMapListener);
+        formMap.remove();
+        formMap = null;
       }
     }
 
     function saveObservation() {
-      if (!APP.currentCoordinates) {
+      if (!currentCoordinates) {
         showToast("Please select a location on the map");
         return;
       }
 
-      const date = document.getElementById("obsDate").value;
-      const species = document.getElementById("obsSpecies").value;
-      const count = document.getElementById("obsCount").value || "1";
-      const group = document.getElementById("obsGroup").value;
-      const comment = document.getElementById("obsComment").value;
+      const date = obsDate.value;
+      const species = obsSpecies.value;
+      const count = obsCount.value || "1";
+      const group = obsGroup.value;
+      const comment = obsComment.value;
 
       if (!date || !species) {
         showToast("Please fill in date and species");
@@ -1251,68 +957,239 @@
         type: "Feature",
         geometry: {
           type: "Point",
-          coordinates: APP.currentCoordinates,
+          coordinates: currentCoordinates,
         },
         properties: {
           date,
           species,
-          count: parseInt(count),
+          count,
           group,
           comment,
+          timestamp: new Date().toISOString(),
         },
       };
 
-      if (!APP.geoData.features) {
-        APP.geoData.features = [];
-      }
-
-      APP.geoData.features.push(feature);
-      showToast("Observation saved!");
+      geojsonData.features.push(feature);
+      saveProjectToDisk();
       hideObservationForm();
+      showToast("Observation saved!");
+    }
 
-      // Optionally: add marker to main map
-      if (APP.mainMap) {
-        L.circleMarker(APP.currentCoordinates.reverse(), {
-          radius: 6,
-          fillColor: "#c66e45",
-          color: "#984d31",
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.8,
-        })
-          .bindPopup(`<div class="popup-title">${species}</div><div class="popup-line">${date}</div>`)
-          .addTo(APP.mainMap);
+    // ==================================================
+    // PROJECT FUNCTIONS
+    // ==================================================
+    function createEmptyGeoJSON() {
+      return {
+        type: "FeatureCollection",
+        name: "Eco Field Project",
+        createdWith: "Eco Field Notebook",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        features: [],
+      };
+    }
+
+    async function createNewProject() {
+      geojsonData = createEmptyGeoJSON();
+      projectFileName = "eco-field-project.geojson";
+      projectFileHandle = null;
+
+      if (supportsFileSystemAccess) {
+        try {
+          projectFileHandle = await window.showSaveFilePicker({
+            suggestedName: projectFileName,
+            types: [
+              {
+                description: "GeoJSON file",
+                accept: {
+                  "application/geo+json": [".geojson"],
+                  "application/json": [".json"],
+                },
+              },
+            ],
+          });
+
+          projectFileName = projectFileHandle.name || projectFileName;
+          await saveProjectToDisk(false);
+          openProjectInterface();
+          showToast("New GeoJSON project created");
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            console.error(error);
+            alert("Could not create the GeoJSON file.");
+          }
+        }
+      } else {
+        downloadGeoJSON();
+        openProjectInterface();
+        showToast("New project created. Updated copies will download automatically.");
       }
     }
 
-    // =============================================
-    // EVENT LISTENERS
-    // =============================================
-    document.addEventListener("DOMContentLoaded", () => {
-      // Add Observation Button
-      document.getElementById("addObservationBtn")?.addEventListener("click", showObservationForm);
+    async function openExistingProject() {
+      if (supportsFileSystemAccess) {
+        try {
+          const handles = await window.showOpenFilePicker({
+            multiple: false,
+            types: [
+              {
+                description: "GeoJSON file",
+                accept: {
+                  "application/geo+json": [".geojson"],
+                  "application/json": [".json"],
+                },
+              },
+            ],
+          });
 
-      // Save Observation Button
-      document.getElementById("saveObservationBtn").addEventListener("click", saveObservation);
+          projectFileHandle = handles[0];
+          const file = await projectFileHandle.getFile();
+          projectFileName = file.name || "eco-field-project.geojson";
+          const text = await file.text();
 
-      // Cancel Observation Button
-      document.getElementById("cancelObservationBtn").addEventListener("click", hideObservationForm);
-
-      // Initialize main map if needed
-      const mapContainer = document.getElementById("map");
-      if (mapContainer && !APP.mainMap) {
-        APP.mainMap = L.map(mapContainer).setView([51.5, -0.09], 13);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap contributors",
-          maxZoom: 19,
-        }).addTo(APP.mainMap);
+          loadGeoJSONText(text);
+        } catch (error) {
+          if (error.name !== "AbortError") {
+            console.error(error);
+            alert("Could not open the selected GeoJSON file.");
+            fallbackFileInput.click();
+          }
+        }
+      } else {
+        fallbackFileInput.click();
       }
+    }
 
-      // Initialize empty geoData
-      APP.geoData = {
-        type: "FeatureCollection",
-        features: [],
-      };
+    fallbackFileInput.addEventListener("change", async function () {
+      const file = fallbackFileInput.files[0];
+      if (!file) return;
+
+      projectFileHandle = null;
+      projectFileName = file.name || "eco-field-project.geojson";
+
+      const text = await file.text();
+      loadGeoJSONText(text);
+      fallbackFileInput.value = "";
+    });
+
+    function loadGeoJSONText(text) {
+      try {
+        const parsed = JSON.parse(text);
+
+        if (!parsed || parsed.type !== "FeatureCollection" || !Array.isArray(parsed.features)) {
+          throw new Error("Invalid GeoJSON FeatureCollection.");
+        }
+
+        geojsonData = parsed;
+        openProjectInterface();
+        showToast("GeoJSON project loaded");
+      } catch (error) {
+        console.error(error);
+        alert("The selected file is not a valid GeoJSON FeatureCollection.");
+      }
+    }
+
+    function openProjectInterface() {
+      startScreen.classList.add("hidden");
+      projectNameBox.textContent = projectFileName;
+      projectNameBox.innerHTML += '<span>Currently editing this project</span>';
+      sidebar.classList.add("open");
+      sidebarToggle.textContent = "×";
+      document.getElementById("addObservationBtn")?.classList.remove("hidden");
+    }
+
+    async function saveProjectToDisk() {
+      if (!geojsonData) return;
+
+      geojsonData.updatedAt = new Date().toISOString();
+      const json = JSON.stringify(geojsonData, null, 2);
+
+      if (projectFileHandle && supportsFileSystemAccess) {
+        try {
+          const writable = await projectFileHandle.createWritable();
+          await writable.write(json);
+          await writable.close();
+          showToast("Project saved!");
+        } catch (error) {
+          console.error("Could not save to file:", error);
+          downloadGeoJSON();
+        }
+      } else {
+        downloadGeoJSON();
+      }
+    }
+
+    function downloadGeoJSON() {
+      if (!geojsonData) return;
+
+      const json = JSON.stringify(geojsonData, null, 2);
+      const blob = new Blob([json], { type: "application/geo+json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = projectFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function closeProject() {
+      geojsonData = null;
+      projectFileHandle = null;
+      startScreen.classList.remove("hidden");
+      sidebar.classList.remove("open");
+      sidebarToggle.textContent = "☰";
+      hideObservationForm();
+      document.getElementById("addObservationBtn")?.classList.add("hidden");
+      showToast("Project closed");
+    }
+
+    // ==================================================
+    // SIDEBAR FUNCTIONS
+    // ==================================================
+    function toggleSidebar() {
+      sidebar.classList.toggle("open");
+      sidebarToggle.textContent = sidebar.classList.contains("open") ? "×" : "☰";
+    }
+
+    function toggleFilters() {
+      filterPanel.classList.toggle("hidden");
+    }
+
+    // ==================================================
+    // EVENT LISTENERS
+    // ==================================================
+    createProjectBtn.addEventListener("click", createNewProject);
+    openProjectBtn.addEventListener("click", openExistingProject);
+    sidebarToggle.addEventListener("click", toggleSidebar);
+    toggleFiltersBtn.addEventListener("click", toggleFilters);
+    closeProjectBtn.addEventListener("click", closeProject);
+    saveObservationBtn.addEventListener("click", saveObservation);
+    cancelObservationBtn.addEventListener("click", hideObservationForm);
+
+    // Observation form button
+    const addObservationBtn = document.createElement("button");
+    addObservationBtn.id = "addObservationBtn";
+    addObservationBtn.className = "add-observation-btn hidden";
+    addObservationBtn.innerHTML = "+";
+    addObservationBtn.addEventListener("click", () => {
+      if (!geojsonData) {
+        showToast("Please open or create a project first");
+        return;
+      }
+      showObservationForm();
+    });
+    document.getElementById("app").appendChild(addObservationBtn);
+
+    // Initialize main map
+    window.addEventListener("DOMContentLoaded", () => {
+      map = L.map("map").setView([51.5, -0.09], 13);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+        maxZoom: 19,
+      }).addTo(map);
     });
   </script>
 </body>
