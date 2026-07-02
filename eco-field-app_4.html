@@ -1924,12 +1924,15 @@
       addObservationBtn.classList.add("active");
       addObservationBtn.textContent = "×";
 
-      crosshair.classList.remove("hidden");
-      captureHint.classList.remove("hidden");
+      crosshair.classList.add("hidden");
+      captureHint.classList.add("hidden");
       observationFormPanel.classList.remove("hidden");
-
+      
       setNowDefaults();
-      updateCaptureCoordinates();
+      
+      setTimeout(() => {
+        initializeObservationFormMap();
+      }, 100);
     }
 
     function closeCaptureMode() {
