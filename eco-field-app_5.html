@@ -459,13 +459,24 @@
       bottom: 22px;
       transform: translateX(-50%);
       z-index: 830;
-      width: min(790px, calc(100% - 130px));
+      width: min(900px, calc(100% - 130px));
       background: rgba(255, 250, 240, 0.98);
       border: 1px solid var(--border);
       border-radius: 28px;
       padding: 16px;
       box-shadow: var(--shadow);
       backdrop-filter: blur(16px);
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 16px;
+      max-height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+
+    .form-left {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
     .form-header {
@@ -527,13 +538,14 @@
     }
 
     .comments-field {
-      grid-column: 1 / 4;
+      grid-column: 1 / -1;
     }
 
     .form-actions {
       display: flex;
       gap: 8px;
       align-items: stretch;
+      grid-column: 1 / -1;
     }
 
     .save-btn,
@@ -553,6 +565,54 @@
     .cancel-btn {
       background: var(--moss-light);
       color: var(--forest);
+    }
+
+    .form-map-container {
+      position: relative;
+      width: 280px;
+      height: 280px;
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 24px rgba(12, 31, 25, 0.12);
+    }
+
+    #formMap {
+      width: 100%;
+      height: 100%;
+    }
+
+    .form-map-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 32px;
+      height: 32px;
+      transform: translate(-50%, -50%);
+      z-index: 400;
+      pointer-events: none;
+    }
+
+    .form-map-crosshair::before,
+    .form-map-crosshair::after {
+      content: "";
+      position: absolute;
+      background: var(--burnt-dark);
+      box-shadow: 0 0 0 2px rgba(255, 250, 240, 0.9);
+    }
+
+    .form-map-crosshair::before {
+      width: 32px;
+      height: 2px;
+      top: 15px;
+      left: 0;
+    }
+
+    .form-map-crosshair::after {
+      width: 2px;
+      height: 32px;
+      left: 15px;
+      top: 0;
     }
 
     dialog {
@@ -764,6 +824,19 @@
       color: #843b2c;
     }
 
+    @media (max-width: 1200px) {
+      .observation-form-panel {
+        grid-template-columns: 1fr;
+        width: min(800px, calc(100% - 80px));
+      }
+
+      .form-map-container {
+        width: 100%;
+        height: 250px;
+        margin-bottom: 12px;
+      }
+    }
+
     @media (max-width: 900px) {
       .project-actions {
         grid-template-columns: 1fr;
@@ -773,16 +846,18 @@
         grid-template-columns: 1fr 1fr;
       }
 
-      .comments-field,
-      .form-actions {
-        grid-column: 1 / -1;
-      }
-
       .observation-form-panel {
         left: 18px;
-        right: 92px;
-        width: auto;
+        right: 12px;
         transform: none;
+        width: auto;
+        grid-template-columns: 1fr;
+        padding: 12px;
+      }
+
+      .form-map-container {
+        width: 100%;
+        height: 220px;
       }
     }
 
@@ -814,6 +889,8 @@
         bottom: 104px;
         max-height: calc(100vh - 170px);
         overflow-y: auto;
+        grid-template-columns: 1fr;
+        padding: 12px;
       }
 
       .form-grid,
@@ -823,7 +900,7 @@
 
       .comments-field,
       .form-actions {
-        grid-column: auto;
+        grid-column: 1 / -1;
       }
 
       .form-actions {
@@ -860,6 +937,11 @@
 
       .chart-row {
         grid-template-columns: 105px 1fr 30px;
+      }
+
+      .form-map-container {
+        height: 200px;
+        margin-bottom: 12px;
       }
     }
   </style>
@@ -1000,1573 +1082,238 @@
       </div>
     </aside>
 
-    <div id="crosshair" class="crosshair hidden"></div>
+    <!-- Observation Form Panel with Embedded Map -->
+    <div id="observationFormPanel" class="observation-form-panel hidden">
+      <div class="form-left">
+        <div class="form-header">
+          <h3>New Observation</h3>
+          <span class="coordinates-small" id="coordsDisplay">Select location on map</span>
+        </div>
 
-    <div id="captureHint" class="capture-hint hidden">
-      Move the map so the cross is on the observation location
-    </div>
-
-    <div id="drawHint" class="draw-hint hidden">
-      <span id="drawHintText">Drawing</span>
-      <button id="finishDrawingBtn" class="finish" type="button">Finish</button>
-      <button id="cancelDrawingBtn" class="cancel" type="button">Cancel</button>
-    </div>
-
-    <button id="gpsBtn" class="gps-btn hidden" type="button" title="Go to my current location">⌖</button>
-    <button id="addObservationBtn" class="add-observation-btn hidden" type="button" title="Add point observation">+</button>
-
-    <section id="observationFormPanel" class="observation-form-panel hidden">
-      <div class="form-header">
-        <h3>New point observation</h3>
-        <div id="currentCoordinates" class="coordinates-small">Lat --, Lng --</div>
-      </div>
-
-      <form id="observationForm">
         <div class="form-grid">
           <div class="form-field">
+            <label for="obsDate">Date</label>
+            <input id="obsDate" type="date" />
+          </div>
+
+          <div class="form-field">
+            <label for="obsSpecies">Species</label>
+            <input id="obsSpecies" type="text" placeholder="e.g. Common pipistrelle" />
+          </div>
+
+          <div class="form-field">
+            <label for="obsCount">Count</label>
+            <input id="obsCount" type="number" placeholder="1" />
+          </div>
+
+          <div class="form-field">
             <label for="obsGroup">Group</label>
-            <select id="obsGroup" required>
+            <select id="obsGroup">
+              <option value="">Select</option>
               <option value="Bat">Bat</option>
               <option value="Bird">Bird</option>
             </select>
           </div>
 
-          <div class="form-field">
-            <label for="obsSpecies">Species</label>
-            <select id="obsSpecies" required></select>
-          </div>
-
-          <div class="form-field">
-            <label for="obsDate">Date</label>
-            <input id="obsDate" type="date" required />
-          </div>
-
-          <div class="form-field">
-            <label for="obsTime">Time</label>
-            <input id="obsTime" type="time" required />
-          </div>
-
           <div class="form-field comments-field">
-            <label for="obsComments">Comments</label>
-            <textarea id="obsComments" placeholder="Behaviour, weather, count, habitat, confidence..."></textarea>
-          </div>
-
-          <div class="form-actions">
-            <button class="save-btn" type="submit">Save observation</button>
-            <button id="cancelObservationBtn" class="cancel-btn" type="button">Cancel</button>
-          </div>
-        </div>
-      </form>
-    </section>
-
-    <dialog id="instructionsDialog">
-      <div class="dialog-header">
-        <h2>How to use the app</h2>
-        <button class="dialog-close" type="button" data-close-dialog="instructionsDialog">×</button>
-      </div>
-
-      <div class="dialog-body">
-        <ul>
-          <li>Start by choosing <strong>Create new project</strong> or <strong>Open existing project</strong>.</li>
-          <li>A project is saved as a GeoJSON FeatureCollection.</li>
-          <li>Use the round <strong>+</strong> button to add a point observation.</li>
-          <li>Use the GPS button in the bottom-left corner to zoom to your current location.</li>
-          <li>Use the map layer button to switch between street map and satellite map.</li>
-          <li>Use the sidebar drawing tools to add a red research area, observation area, or foraging route.</li>
-          <li>Research areas are red outlines with no fill.</li>
-          <li>Observation areas can be saved as <strong>Foraging area</strong> or <strong>Pair area</strong>.</li>
-          <li>Foraging routes include species, date, time, and comments.</li>
-          <li>Different species are automatically shown with different colors.</li>
-          <li>Use the <strong>Project Summary</strong> button to open charts and project statistics.</li>
-          <li>Click a feature on the map to edit or delete it.</li>
-        </ul>
-      </div>
-    </dialog>
-
-    <dialog id="summaryDialog">
-      <div class="dialog-header">
-        <h2>Project Summary</h2>
-        <button class="dialog-close" type="button" data-close-dialog="summaryDialog">×</button>
-      </div>
-
-      <div class="dialog-body">
-        <div id="summaryStats" class="summary-stats"></div>
-
-        <h3>Feature types</h3>
-        <div id="featureTypeChart" class="chart-box"></div>
-
-        <h3>Point observation species</h3>
-        <div id="speciesChart" class="chart-box"></div>
-
-        <h3>Observation areas and foraging routes by species</h3>
-        <div id="geometrySpeciesChart" class="chart-box"></div>
-      </div>
-    </dialog>
-
-    <dialog id="geometryMetaDialog">
-      <div class="dialog-header">
-        <h2 id="geometryMetaTitle">Save geometry</h2>
-        <button class="dialog-close" type="button" data-close-dialog="geometryMetaDialog">×</button>
-      </div>
-
-      <form id="geometryMetaForm">
-        <div class="dialog-body">
-          <div class="edit-grid">
-            <div id="geometrySubtypeField" class="form-field">
-              <label for="geometrySubtype">Area type</label>
-              <select id="geometrySubtype">
-                <option value="Foraging area">Foraging area</option>
-                <option value="Pair area">Pair area</option>
-              </select>
-            </div>
-
-            <div class="form-field">
-              <label for="geometrySpecies">Species</label>
-              <select id="geometrySpecies" required></select>
-            </div>
-
-            <div class="form-field">
-              <label for="geometryDate">Date</label>
-              <input id="geometryDate" type="date" required />
-            </div>
-
-            <div class="form-field">
-              <label for="geometryTime">Time</label>
-              <input id="geometryTime" type="time" required />
-            </div>
-
-            <div class="form-field full">
-              <label for="geometryComments">Comments</label>
-              <textarea id="geometryComments" placeholder="Behaviour, habitat, confidence, notes..."></textarea>
-            </div>
+            <label for="obsComment">Comment</label>
+            <textarea id="obsComment" placeholder="Add notes about the observation..."></textarea>
           </div>
         </div>
 
-        <div class="dialog-footer">
-          <button type="button" class="cancel-btn" data-close-dialog="geometryMetaDialog">Cancel</button>
-          <button type="submit" class="save-btn">Save geometry</button>
+        <div class="form-actions">
+          <button class="save-btn" id="saveObservationBtn" type="button">Save Observation</button>
+          <button class="cancel-btn" id="cancelObservationBtn" type="button">Cancel</button>
         </div>
-      </form>
-    </dialog>
-
-    <dialog id="editDialog">
-      <div class="dialog-header">
-        <h2>Edit feature</h2>
-        <button class="dialog-close" type="button" data-close-dialog="editDialog">×</button>
       </div>
 
-      <form id="editObservationForm">
-        <div class="dialog-body">
-          <input id="editFeatureId" type="hidden" />
+      <!-- Embedded Map with Crosshair -->
+      <div class="form-map-container">
+        <div id="formMap"></div>
+        <div class="form-map-crosshair"></div>
+      </div>
+    </div>
 
-          <div class="edit-grid">
-            <div class="form-field">
-              <label for="editGroup">Group</label>
-              <select id="editGroup" required>
-                <option value="Bat">Bat</option>
-                <option value="Bird">Bird</option>
-              </select>
-            </div>
+    <!-- Capture Hint -->
+    <div class="capture-hint">Click on the map to capture coordinates</div>
 
-            <div class="form-field">
-              <label for="editSpecies">Species</label>
-              <select id="editSpecies" required></select>
-            </div>
-
-            <div class="form-field">
-              <label for="editDate">Date</label>
-              <input id="editDate" type="date" required />
-            </div>
-
-            <div class="form-field">
-              <label for="editTime">Time</label>
-              <input id="editTime" type="time" required />
-            </div>
-
-            <div class="form-field full">
-              <label for="editComments">Comments</label>
-              <textarea id="editComments"></textarea>
-            </div>
-          </div>
-        </div>
-
-        <div class="dialog-footer">
-          <button type="button" class="cancel-btn" data-close-dialog="editDialog">Cancel</button>
-          <button type="submit" class="save-btn">Confirm edit</button>
-        </div>
-      </form>
-    </dialog>
-
-    <div id="toast" class="toast">Saved</div>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
   </div>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    crossorigin="">
-  </script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const speciesByGroup = {
-      Bat: [
-        "Common pipistrelle",
-        "Soprano pipistrelle",
-        "Nathusius' pipistrelle",
-        "Serotine bat",
-        "Noctule bat",
-        "Brown long-eared bat",
-        "Daubenton's bat",
-        "Whiskered bat",
-        "Natterer's bat",
-        "Bat species unknown"
-      ],
-      Bird: [
-        "Blackbird",
-        "Robin",
-        "Great tit",
-        "Blue tit",
-        "House sparrow",
-        "Barn swallow",
-        "Common swift",
-        "Grey heron",
-        "Buzzard",
-        "Kestrel",
-        "Tawny owl",
-        "Bird species unknown"
-      ]
+    // =============================================
+    // MAIN APPLICATION STATE
+    // =============================================
+    const APP = {
+      projectFile: null,
+      geoData: null,
+      mainMap: null,
+      formMap: null,
+      isCapturing: false,
+      currentCoordinates: null,
+      formMapListener: null,
     };
 
-    let map;
-    let markerLayer;
-    let drawingLayer;
-    let temporaryDrawLayer;
-
-    let captureMode = false;
-    let geojsonData = createEmptyGeoJSON();
-
-    let projectFileHandle = null;
-    let projectFileName = "eco-field-project_1.geojson";
-
-    let activeDrawMode = null;
-    let activeDrawLabel = "";
-    let activeDrawPoints = [];
-    let pendingGeometry = null;
-
-    let watchId = null;
-    let userLocationMarker = null;
-    let userAccuracyCircle = null;
-
-    const supportsFileSystemAccess =
-      "showSaveFilePicker" in window && "showOpenFilePicker" in window;
-
-    const startScreen = document.getElementById("startScreen");
-    const createProjectBtn = document.getElementById("createProjectBtn");
-    const openProjectBtn = document.getElementById("openProjectBtn");
-    const fallbackFileInput = document.getElementById("fallbackFileInput");
-
-    const sidebar = document.getElementById("sidebar");
-    const sidebarToggle = document.getElementById("sidebarToggle");
-    const toggleFiltersBtn = document.getElementById("toggleFiltersBtn");
-    const filterPanel = document.getElementById("filterPanel");
-    const instructionsBtn = document.getElementById("instructionsBtn");
-    const instructionsDialog = document.getElementById("instructionsDialog");
-    const closeProjectBtn = document.getElementById("closeProjectBtn");
-    const projectNameBox = document.getElementById("projectNameBox");
-
-    const projectSummaryBtn = document.getElementById("projectSummaryBtn");
-    const summaryDialog = document.getElementById("summaryDialog");
-    const summaryStats = document.getElementById("summaryStats");
-    const featureTypeChart = document.getElementById("featureTypeChart");
-    const speciesChart = document.getElementById("speciesChart");
-    const geometrySpeciesChart = document.getElementById("geometrySpeciesChart");
-
-    const drawResearchAreaBtn = document.getElementById("drawResearchAreaBtn");
-    const drawObservationAreaBtn = document.getElementById("drawObservationAreaBtn");
-    const drawSurveyLineBtn = document.getElementById("drawSurveyLineBtn");
-    const drawHint = document.getElementById("drawHint");
-    const drawHintText = document.getElementById("drawHintText");
-    const finishDrawingBtn = document.getElementById("finishDrawingBtn");
-    const cancelDrawingBtn = document.getElementById("cancelDrawingBtn");
-
-    const geometryMetaDialog = document.getElementById("geometryMetaDialog");
-    const geometryMetaForm = document.getElementById("geometryMetaForm");
-    const geometryMetaTitle = document.getElementById("geometryMetaTitle");
-    const geometrySubtypeField = document.getElementById("geometrySubtypeField");
-    const geometrySubtype = document.getElementById("geometrySubtype");
-    const geometrySpecies = document.getElementById("geometrySpecies");
-    const geometryDate = document.getElementById("geometryDate");
-    const geometryTime = document.getElementById("geometryTime");
-    const geometryComments = document.getElementById("geometryComments");
-
-    const gpsBtn = document.getElementById("gpsBtn");
-    const addObservationBtn = document.getElementById("addObservationBtn");
-    const crosshair = document.getElementById("crosshair");
-    const captureHint = document.getElementById("captureHint");
-    const observationFormPanel = document.getElementById("observationFormPanel");
-    const observationForm = document.getElementById("observationForm");
-    const cancelObservationBtn = document.getElementById("cancelObservationBtn");
-    const currentCoordinates = document.getElementById("currentCoordinates");
-
-    const obsGroup = document.getElementById("obsGroup");
-    const obsSpecies = document.getElementById("obsSpecies");
-    const obsDate = document.getElementById("obsDate");
-    const obsTime = document.getElementById("obsTime");
-    const obsComments = document.getElementById("obsComments");
-
-    const editDialog = document.getElementById("editDialog");
-    const editObservationForm = document.getElementById("editObservationForm");
-    const editFeatureId = document.getElementById("editFeatureId");
-    const editGroup = document.getElementById("editGroup");
-    const editSpecies = document.getElementById("editSpecies");
-    const editDate = document.getElementById("editDate");
-    const editTime = document.getElementById("editTime");
-    const editComments = document.getElementById("editComments");
-
-    const filterGroup = document.getElementById("filterGroup");
-    const filterSpecies = document.getElementById("filterSpecies");
-    const filterDate = document.getElementById("filterDate");
-    const filterComment = document.getElementById("filterComment");
-    const clearFiltersBtn = document.getElementById("clearFiltersBtn");
-
-    const toast = document.getElementById("toast");
-
-    document.addEventListener("DOMContentLoaded", function () {
-      if (!window.L) {
-        alert("Leaflet could not load. Please check your internet connection.");
-        return;
-      }
-
-      initializeMap();
-      populateSpeciesSelect(obsSpecies, "Bat");
-      populateSpeciesSelect(editSpecies, "Bat");
-      populateAllSpeciesSelect(geometrySpecies);
-      setNowDefaults();
-      setGeometryNowDefaults();
-      attachEvents();
-      updateProjectLabels(false);
-    });
-
-    function initializeMap() {
-      map = L.map("map", {
-        zoomControl: false,
-        doubleClickZoom: false
-      }).setView([52.442, 4.829], 12);
-
-      L.control.zoom({
-        position: "bottomleft"
-      }).addTo(map);
-
-      const streetMap = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors"
-      });
-
-      const satelliteMap = L.tileLayer(
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        {
-          maxZoom: 19,
-          attribution: "Tiles &copy; Esri"
-        }
-      );
-
-      streetMap.addTo(map);
-
-      L.control.layers(
-        {
-          "Street map": streetMap,
-          "Satellite": satelliteMap
-        },
-        {},
-        {
-          position: "topright",
-          collapsed: true
-        }
-      ).addTo(map);
-
-      markerLayer = L.layerGroup().addTo(map);
-      drawingLayer = L.layerGroup().addTo(map);
-      temporaryDrawLayer = L.layerGroup().addTo(map);
-
-      map.on("move", updateCaptureCoordinates);
-      map.on("zoom", updateCaptureCoordinates);
-      map.on("click", handleMapClickForDrawing);
-      map.on("dblclick", function () {
-        if (activeDrawMode) finishDrawing();
-      });
-    }
-
-    function attachEvents() {
-      createProjectBtn.addEventListener("click", createNewProject);
-      openProjectBtn.addEventListener("click", openExistingProject);
-      fallbackFileInput.addEventListener("change", handleFallbackFileOpen);
-
-      sidebarToggle.addEventListener("click", toggleSidebar);
-      projectSummaryBtn.addEventListener("click", openProjectSummary);
-      toggleFiltersBtn.addEventListener("click", toggleFilters);
-      instructionsBtn.addEventListener("click", () => safeShowDialog(instructionsDialog));
-      closeProjectBtn.addEventListener("click", closeProject);
-
-      addObservationBtn.addEventListener("click", toggleCaptureMode);
-      cancelObservationBtn.addEventListener("click", closeCaptureMode);
-      obsGroup.addEventListener("change", () => populateSpeciesSelect(obsSpecies, obsGroup.value));
-      observationForm.addEventListener("submit", saveNewObservation);
-
-      editGroup.addEventListener("change", () => populateSpeciesSelect(editSpecies, editGroup.value));
-      editObservationForm.addEventListener("submit", saveEditedObservation);
-
-      gpsBtn.addEventListener("click", goToCurrentLocation);
-
-      drawResearchAreaBtn.addEventListener("click", () => startDrawing("Research area", "Polygon"));
-      drawObservationAreaBtn.addEventListener("click", () => startDrawing("Observation area", "Polygon"));
-      drawSurveyLineBtn.addEventListener("click", () => startDrawing("Foraging route", "LineString"));
-
-      finishDrawingBtn.addEventListener("click", finishDrawing);
-      cancelDrawingBtn.addEventListener("click", () => cancelDrawing(true));
-
-      geometryMetaForm.addEventListener("submit", saveGeometryWithMetadata);
-
-      geometryMetaDialog.addEventListener("close", function () {
-        if (pendingGeometry) {
-          pendingGeometry = null;
-          cancelDrawing(false);
-        }
-      });
-
-      document.querySelectorAll("[data-close-dialog]").forEach(button => {
-        button.addEventListener("click", function () {
-          const dialogId = button.getAttribute("data-close-dialog");
-          const dialog = document.getElementById(dialogId);
-          if (dialog && dialog.open) dialog.close();
-        });
-      });
-
-      [filterGroup, filterSpecies, filterDate, filterComment].forEach(input => {
-        input.addEventListener("input", renderAllFeatures);
-        input.addEventListener("change", renderAllFeatures);
-      });
-
-      clearFiltersBtn.addEventListener("click", function () {
-        filterGroup.value = "";
-        filterSpecies.value = "";
-        filterDate.value = "";
-        filterComment.value = "";
-        renderAllFeatures();
-      });
-    }
-
-    function safeShowDialog(dialog) {
-      if (!dialog) return;
-      if (typeof dialog.showModal === "function") {
-        dialog.showModal();
-      } else {
-        alert("Your browser does not fully support dialogs. Please use a recent version of Chrome or Edge.");
-      }
-    }
-
-    function createEmptyGeoJSON() {
-      return {
-        type: "FeatureCollection",
-        name: "Eco Field Project",
-        createdWith: "Eco Field Notebook",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        features: []
-      };
-    }
-
-    async function createNewProject() {
-      geojsonData = createEmptyGeoJSON();
-      projectFileName = "eco-field-project_1.geojson";
-      projectFileHandle = null;
-
-      if (supportsFileSystemAccess) {
-        try {
-          projectFileHandle = await window.showSaveFilePicker({
-            suggestedName: projectFileName,
-            types: [
-              {
-                description: "GeoJSON file",
-                accept: {
-                  "application/geo+json": [".geojson"],
-                  "application/json": [".json"]
-                }
-              }
-            ]
-          });
-
-          projectFileName = projectFileHandle.name || projectFileName;
-          await saveProjectToDisk(false);
-          openProjectInterface();
-          showToast("New GeoJSON project created");
-        } catch (error) {
-          if (error.name !== "AbortError") {
-            console.error(error);
-            alert("Could not create the GeoJSON file. A download copy will be created instead.");
-            downloadGeoJSON();
-            openProjectInterface();
-          }
-        }
-      } else {
-        downloadGeoJSON();
-        openProjectInterface();
-        showToast("New project created. Updated copies will download automatically.");
-      }
-    }
-
-    async function openExistingProject() {
-      if (supportsFileSystemAccess) {
-        try {
-          const handles = await window.showOpenFilePicker({
-            multiple: false,
-            types: [
-              {
-                description: "GeoJSON file",
-                accept: {
-                  "application/geo+json": [".geojson"],
-                  "application/json": [".json"]
-                }
-              }
-            ]
-          });
-
-          projectFileHandle = handles[0];
-          const file = await projectFileHandle.getFile();
-          projectFileName = file.name || "eco-field-project_1.geojson";
-          const text = await file.text();
-
-          loadGeoJSONText(text);
-        } catch (error) {
-          if (error.name !== "AbortError") {
-            console.error(error);
-            alert("Could not open the selected GeoJSON file. Try the fallback file picker.");
-            fallbackFileInput.click();
-          }
-        }
-      } else {
-        fallbackFileInput.click();
-      }
-    }
-
-    async function handleFallbackFileOpen() {
-      const file = fallbackFileInput.files[0];
-      if (!file) return;
-
-      projectFileHandle = null;
-      projectFileName = file.name || "eco-field-project_1.geojson";
-
-      const text = await file.text();
-      loadGeoJSONText(text);
-      fallbackFileInput.value = "";
-    }
-
-    function loadGeoJSONText(text) {
-      try {
-        const parsed = JSON.parse(text);
-
-        if (!parsed || parsed.type !== "FeatureCollection" || !Array.isArray(parsed.features)) {
-          throw new Error("Invalid GeoJSON FeatureCollection");
-        }
-
-        parsed.features.forEach(feature => {
-          if (!feature.properties) feature.properties = {};
-          if (!feature.properties.id) feature.properties.id = createId();
-          if (!feature.properties.featureType) {
-            feature.properties.featureType = inferFeatureType(feature);
-          }
-        });
-
-        geojsonData = parsed;
-        openProjectInterface();
-        renderAllFeatures();
-        fitToFeatures();
-        showToast("GeoJSON project loaded");
-      } catch (error) {
-        console.error(error);
-        alert("The selected file is not a valid GeoJSON FeatureCollection.");
-      }
-    }
-
-    function inferFeatureType(feature) {
-      if (!feature.geometry) return "Unknown";
-      if (feature.geometry.type === "Point") return "Point observation";
-      if (feature.geometry.type === "Polygon") return "Observation area";
-      if (feature.geometry.type === "LineString") return "Foraging route";
-      return feature.geometry.type;
-    }
-
-    function openProjectInterface() {
-      startScreen.classList.add("hidden");
-      addObservationBtn.classList.remove("hidden");
-      gpsBtn.classList.remove("hidden");
-      updateProjectLabels(true);
-      renderAllFeatures();
-
+    // =============================================
+    // UTILITY FUNCTIONS
+    // =============================================
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
       setTimeout(() => {
-        map.invalidateSize();
+        toast.classList.remove("show");
+      }, 3000);
+    }
+
+    // =============================================
+    // FORM MAP FUNCTIONS
+    // =============================================
+    function initFormMap() {
+      if (APP.formMap) {
+        APP.formMap.off("click", APP.formMapListener);
+      }
+
+      const container = document.getElementById("formMap");
+      if (!container) return;
+
+      APP.formMap = L.map(container).setView([51.5, -0.09], 13);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
+        maxZoom: 19,
+      }).addTo(APP.formMap);
+
+      // Click listener for coordinates
+      APP.formMapListener = (e) => {
+        const lat = e.latlng.lat.toFixed(6);
+        const lng = e.latlng.lng.toFixed(6);
+        APP.currentCoordinates = [lng, lat];
+        document.getElementById("coordsDisplay").textContent = `${lat}, ${lng}`;
+        showToast("Location selected: " + lat + ", " + lng);
+      };
+
+      APP.formMap.on("click", APP.formMapListener);
+
+      // Trigger resize to ensure proper rendering
+      setTimeout(() => {
+        APP.formMap.invalidateSize();
       }, 100);
     }
 
-    function closeProject() {
-      const confirmed = confirm("Close this project? Make sure your latest GeoJSON has been saved.");
-      if (!confirmed) return;
+    function showObservationForm() {
+      const formPanel = document.getElementById("observationFormPanel");
+      formPanel.classList.remove("hidden");
+      APP.currentCoordinates = null;
+      document.getElementById("coordsDisplay").textContent = "Select location on map";
+      document.getElementById("obsDate").valueAsDate = new Date();
 
-      geojsonData = createEmptyGeoJSON();
-      projectFileHandle = null;
-      projectFileName = "eco-field-project_1.geojson";
-
-      markerLayer.clearLayers();
-      drawingLayer.clearLayers();
-      temporaryDrawLayer.clearLayers();
-
-      stopLocationWatch();
-      startScreen.classList.remove("hidden");
-      addObservationBtn.classList.add("hidden");
-      gpsBtn.classList.add("hidden");
-      closeCaptureMode();
-      cancelDrawing(false);
-
-      updateProjectLabels(false);
-    }
-
-    async function saveProjectToDisk(showSavedToast = true) {
-      geojsonData.updatedAt = new Date().toISOString();
-
-      const content = JSON.stringify(geojsonData, null, 2);
-
-      if (projectFileHandle && "createWritable" in projectFileHandle) {
-        try {
-          const writable = await projectFileHandle.createWritable();
-          await writable.write(content);
-          await writable.close();
-
-          if (showSavedToast) showToast("GeoJSON file updated");
-          return;
-        } catch (error) {
-          console.error(error);
-          alert("Direct saving failed. An updated GeoJSON copy will be downloaded instead.");
-        }
-      }
-
-      downloadGeoJSON();
-
-      if (showSavedToast) {
-        showToast("Updated GeoJSON copy downloaded");
+      // Initialize the form map if not already done
+      if (!APP.formMap) {
+        setTimeout(() => {
+          initFormMap();
+        }, 100);
+      } else {
+        APP.formMap.invalidateSize();
       }
     }
 
-    function downloadGeoJSON() {
-      const content = JSON.stringify(geojsonData, null, 2);
-      const blob = new Blob([content], {
-        type: "application/geo+json"
-      });
-
-      const safeName =
-        projectFileName.endsWith(".geojson") || projectFileName.endsWith(".json")
-          ? projectFileName
-          : "eco-field-project_1.geojson";
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = safeName;
-
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    function hideObservationForm() {
+      const formPanel = document.getElementById("observationFormPanel");
+      formPanel.classList.add("hidden");
+      if (APP.formMap) {
+        APP.formMap.off("click", APP.formMapListener);
+        APP.formMap.remove();
+        APP.formMap = null;
+      }
     }
 
-    function updateProjectLabels(projectOpen = true) {
-      if (!projectOpen || !startScreen.classList.contains("hidden")) {
-        projectNameBox.innerHTML = `
-          No project loaded
-          <span>Choose or create a GeoJSON project</span>
-        `;
+    function saveObservation() {
+      if (!APP.currentCoordinates) {
+        showToast("Please select a location on the map");
         return;
       }
 
-      const cleanName = removeFileExtension(projectFileName);
+      const date = document.getElementById("obsDate").value;
+      const species = document.getElementById("obsSpecies").value;
+      const count = document.getElementById("obsCount").value || "1";
+      const group = document.getElementById("obsGroup").value;
+      const comment = document.getElementById("obsComment").value;
 
-      projectNameBox.innerHTML = `
-        Working on ${escapeHTML(cleanName)}
-        <span>GeoJSON project</span>
-      `;
-    }
-
-    function removeFileExtension(fileName) {
-      return String(fileName || "")
-        .replace(/\.geojson$/i, "")
-        .replace(/\.json$/i, "");
-    }
-
-    function goToCurrentLocation() {
-      if (!navigator.geolocation) {
-        alert("Your browser does not support GPS location.");
+      if (!date || !species) {
+        showToast("Please fill in date and species");
         return;
       }
-
-      gpsBtn.classList.add("active");
-      showToast("Finding current location...");
-
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          const lat = position.coords.latitude;
-          const lng = position.coords.longitude;
-          const accuracy = position.coords.accuracy || 0;
-
-          map.setView([lat, lng], 17);
-          showUserLocation(lat, lng, accuracy);
-          showToast("Current location found");
-
-          startLocationWatch();
-          gpsBtn.classList.remove("active");
-        },
-        error => {
-          console.error(error);
-          gpsBtn.classList.remove("active");
-          alert("Could not get your current location. Check browser location permissions.");
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 12000,
-          maximumAge: 0
-        }
-      );
-    }
-
-    function startLocationWatch() {
-      stopLocationWatch();
-
-      if (!navigator.geolocation) return;
-
-      watchId = navigator.geolocation.watchPosition(
-        position => {
-          showUserLocation(
-            position.coords.latitude,
-            position.coords.longitude,
-            position.coords.accuracy || 0
-          );
-        },
-        error => {
-          console.warn("Location watch failed", error);
-        },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 5000
-        }
-      );
-    }
-
-    function stopLocationWatch() {
-      if (watchId !== null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-
-      watchId = null;
-
-      if (userLocationMarker) {
-        map.removeLayer(userLocationMarker);
-        userLocationMarker = null;
-      }
-
-      if (userAccuracyCircle) {
-        map.removeLayer(userAccuracyCircle);
-        userAccuracyCircle = null;
-      }
-    }
-
-    function showUserLocation(lat, lng, accuracy) {
-      const latLng = [lat, lng];
-
-      if (!userLocationMarker) {
-        userLocationMarker = L.circleMarker(latLng, {
-          radius: 8,
-          color: "#ffffff",
-          weight: 3,
-          fillColor: "#1864ff",
-          fillOpacity: 1
-        }).addTo(map).bindPopup("Your current location");
-      } else {
-        userLocationMarker.setLatLng(latLng);
-      }
-
-      if (!userAccuracyCircle) {
-        userAccuracyCircle = L.circle(latLng, {
-          radius: accuracy,
-          color: "#1864ff",
-          weight: 1,
-          fillColor: "#1864ff",
-          fillOpacity: 0.12
-        }).addTo(map);
-      } else {
-        userAccuracyCircle.setLatLng(latLng);
-        userAccuracyCircle.setRadius(accuracy);
-      }
-    }
-
-    function toggleCaptureMode() {
-      if (captureMode) {
-        closeCaptureMode();
-      } else {
-        openCaptureMode();
-      }
-    }
-
-    function openCaptureMode() {
-      cancelDrawing(false);
-
-      captureMode = true;
-
-      addObservationBtn.classList.add("active");
-      addObservationBtn.textContent = "×";
-
-      crosshair.classList.remove("hidden");
-      captureHint.classList.remove("hidden");
-      observationFormPanel.classList.remove("hidden");
-
-      setNowDefaults();
-      updateCaptureCoordinates();
-    }
-
-    function closeCaptureMode() {
-      captureMode = false;
-
-      addObservationBtn.classList.remove("active");
-      addObservationBtn.textContent = "+";
-
-      crosshair.classList.add("hidden");
-      captureHint.classList.add("hidden");
-      observationFormPanel.classList.add("hidden");
-
-      observationForm.reset();
-      obsGroup.value = "Bat";
-      populateSpeciesSelect(obsSpecies, "Bat");
-      setNowDefaults();
-    }
-
-    function updateCaptureCoordinates() {
-      if (!captureMode || !map) return;
-
-      const center = map.getCenter();
-      currentCoordinates.textContent =
-        "Lat " + center.lat.toFixed(6) + ", Lng " + center.lng.toFixed(6);
-    }
-
-    async function saveNewObservation(event) {
-      event.preventDefault();
-
-      const center = map.getCenter();
 
       const feature = {
         type: "Feature",
         geometry: {
           type: "Point",
-          coordinates: [
-            Number(center.lng.toFixed(7)),
-            Number(center.lat.toFixed(7))
-          ]
+          coordinates: APP.currentCoordinates,
         },
         properties: {
-          id: createId(),
-          featureType: "Point observation",
-          group: obsGroup.value,
-          species: obsSpecies.value,
-          date: obsDate.value,
-          time: obsTime.value,
-          comments: obsComments.value.trim(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
+          date,
+          species,
+          count: parseInt(count),
+          group,
+          comment,
+        },
       };
 
-      geojsonData.features.push(feature);
+      if (!APP.geoData.features) {
+        APP.geoData.features = [];
+      }
 
-      await saveProjectToDisk();
-      renderAllFeatures();
-      closeCaptureMode();
-    }
+      APP.geoData.features.push(feature);
+      showToast("Observation saved!");
+      hideObservationForm();
 
-    function startDrawing(label, geometryType) {
-      closeCaptureMode();
-      cancelDrawing(false);
-
-      activeDrawMode = geometryType;
-      activeDrawLabel = label;
-      activeDrawPoints = [];
-
-      drawHint.classList.remove("hidden");
-      drawHintText.textContent =
-        label + ": click map to add points. " +
-        (geometryType === "Polygon" ? "Minimum 3 points." : "Minimum 2 points.");
-
-      showToast("Drawing " + label.toLowerCase());
-    }
-
-    function handleMapClickForDrawing(event) {
-      if (!activeDrawMode) return;
-
-      activeDrawPoints.push(event.latlng);
-      redrawTemporaryGeometry();
-    }
-
-    function redrawTemporaryGeometry() {
-      temporaryDrawLayer.clearLayers();
-
-      activeDrawPoints.forEach((point, index) => {
-        L.circleMarker(point, {
-          radius: 5,
-          color: "#ffffff",
+      // Optionally: add marker to main map
+      if (APP.mainMap) {
+        L.circleMarker(APP.currentCoordinates.reverse(), {
+          radius: 6,
+          fillColor: "#c66e45",
+          color: "#984d31",
           weight: 2,
-          fillColor: "#111111",
-          fillOpacity: 1
+          opacity: 1,
+          fillOpacity: 0.8,
         })
-          .bindTooltip(String(index + 1), {
-            permanent: false
-          })
-          .addTo(temporaryDrawLayer);
-      });
-
-      if (activeDrawPoints.length < 2) return;
-
-      if (activeDrawMode === "LineString") {
-        L.polyline(activeDrawPoints, {
-          color: activeDrawLabel === "Foraging route" ? "#4059ad" : "#111111",
-          weight: 4,
-          dashArray: "7,6"
-        }).addTo(temporaryDrawLayer);
-      }
-
-      if (activeDrawMode === "Polygon") {
-        L.polygon(activeDrawPoints, getAreaStyle(activeDrawLabel, true)).addTo(temporaryDrawLayer);
+          .bindPopup(`<div class="popup-title">${species}</div><div class="popup-line">${date}</div>`)
+          .addTo(APP.mainMap);
       }
     }
 
-    function finishDrawing() {
-      if (!activeDrawMode) return;
+    // =============================================
+    // EVENT LISTENERS
+    // =============================================
+    document.addEventListener("DOMContentLoaded", () => {
+      // Add Observation Button
+      document.getElementById("addObservationBtn")?.addEventListener("click", showObservationForm);
 
-      const minimumPoints = activeDrawMode === "Polygon" ? 3 : 2;
+      // Save Observation Button
+      document.getElementById("saveObservationBtn").addEventListener("click", saveObservation);
 
-      if (activeDrawPoints.length < minimumPoints) {
-        alert(
-          activeDrawMode === "Polygon"
-            ? "A polygon needs at least 3 points."
-            : "A line needs at least 2 points."
-        );
-        return;
+      // Cancel Observation Button
+      document.getElementById("cancelObservationBtn").addEventListener("click", hideObservationForm);
+
+      // Initialize main map if needed
+      const mapContainer = document.getElementById("map");
+      if (mapContainer && !APP.mainMap) {
+        APP.mainMap = L.map(mapContainer).setView([51.5, -0.09], 13);
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution: "© OpenStreetMap contributors",
+          maxZoom: 19,
+        }).addTo(APP.mainMap);
       }
 
-      const coordinates = activeDrawPoints.map(point => [
-        Number(point.lng.toFixed(7)),
-        Number(point.lat.toFixed(7))
-      ]);
-
-      const geometry =
-        activeDrawMode === "Polygon"
-          ? {
-              type: "Polygon",
-              coordinates: [[...coordinates, coordinates[0]]]
-            }
-          : {
-              type: "LineString",
-              coordinates
-            };
-
-      pendingGeometry = {
-        geometry,
-        featureType: activeDrawLabel
+      // Initialize empty geoData
+      APP.geoData = {
+        type: "FeatureCollection",
+        features: [],
       };
-
-      if (activeDrawLabel === "Research area") {
-        saveResearchAreaGeometry();
-        return;
-      }
-
-      openGeometryMetaDialog(activeDrawLabel);
-    }
-
-    async function saveResearchAreaGeometry() {
-      if (!pendingGeometry) return;
-
-      const feature = {
-        type: "Feature",
-        geometry: pendingGeometry.geometry,
-        properties: {
-          id: createId(),
-          featureType: "Research area",
-          name: "Research area",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      };
-
-      geojsonData.features.push(feature);
-
-      pendingGeometry = null;
-      await saveProjectToDisk();
-      cancelDrawing(false);
-      renderAllFeatures();
-      showToast("Research area saved");
-    }
-
-    function openGeometryMetaDialog(featureType) {
-      geometryMetaTitle.textContent = featureType === "Foraging route"
-        ? "Save foraging route"
-        : "Save observation area";
-
-      geometrySubtypeField.classList.toggle("hidden", featureType === "Foraging route");
-
-      populateAllSpeciesSelect(geometrySpecies);
-      setGeometryNowDefaults();
-
-      geometrySubtype.value = "Foraging area";
-      geometryComments.value = "";
-
-      safeShowDialog(geometryMetaDialog);
-    }
-
-    async function saveGeometryWithMetadata(event) {
-      event.preventDefault();
-
-      if (!pendingGeometry) return;
-
-      const featureType = pendingGeometry.featureType;
-
-      const feature = {
-        type: "Feature",
-        geometry: pendingGeometry.geometry,
-        properties: {
-          id: createId(),
-          featureType,
-          subtype: featureType === "Observation area" ? geometrySubtype.value : "Foraging route",
-          name: featureType === "Observation area" ? geometrySubtype.value : "Foraging route",
-          species: geometrySpecies.value,
-          date: geometryDate.value,
-          time: geometryTime.value,
-          comments: geometryComments.value.trim(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      };
-
-      geojsonData.features.push(feature);
-
-      pendingGeometry = null;
-      geometryMetaDialog.close();
-
-      await saveProjectToDisk();
-      cancelDrawing(false);
-      renderAllFeatures();
-      showToast(feature.properties.name + " saved");
-    }
-
-    function cancelDrawing(showMessage = true) {
-      activeDrawMode = null;
-      activeDrawLabel = "";
-      activeDrawPoints = [];
-
-      temporaryDrawLayer.clearLayers();
-      drawHint.classList.add("hidden");
-
-      if (showMessage) showToast("Drawing cancelled");
-    }
-
-    function renderAllFeatures() {
-      if (!markerLayer || !drawingLayer) return;
-
-      markerLayer.clearLayers();
-      drawingLayer.clearLayers();
-
-      getRenderableFeatures().forEach(feature => {
-        if (!feature.geometry) return;
-
-        if (feature.geometry.type === "Point") {
-          renderPointFeature(feature);
-        }
-
-        if (feature.geometry.type === "Polygon") {
-          renderPolygonFeature(feature);
-        }
-
-        if (feature.geometry.type === "LineString") {
-          renderLineFeature(feature);
-        }
-      });
-    }
-
-    function getRenderableFeatures() {
-      return geojsonData.features.filter(feature => {
-        if (!feature.geometry) return false;
-
-        if (feature.geometry.type !== "Point") {
-          return true;
-        }
-
-        const props = feature.properties || {};
-
-        const groupValue = filterGroup.value;
-        const speciesValue = filterSpecies.value.trim().toLowerCase();
-        const dateValue = filterDate.value;
-        const commentValue = filterComment.value.trim().toLowerCase();
-
-        const groupMatch = !groupValue || props.group === groupValue;
-        const speciesMatch =
-          !speciesValue ||
-          String(props.species || "").toLowerCase().includes(speciesValue);
-        const dateMatch = !dateValue || props.date === dateValue;
-        const commentMatch =
-          !commentValue ||
-          String(props.comments || "").toLowerCase().includes(commentValue);
-
-        return groupMatch && speciesMatch && dateMatch && commentMatch;
-      });
-    }
-
-    function renderPointFeature(feature) {
-      const coords = feature.geometry.coordinates;
-      if (!Array.isArray(coords) || coords.length < 2) return;
-
-      const lng = coords[0];
-      const lat = coords[1];
-      const props = feature.properties || {};
-
-      const marker = L.circleMarker([lat, lng], {
-        radius: 9,
-        color: props.group === "Bat" ? "#73508a" : "#2f738f",
-        weight: 3,
-        fillColor: props.group === "Bat" ? "#a681ba" : "#75bbd2",
-        fillOpacity: 0.88
-      });
-
-      marker.bindPopup(createPointPopupHTML(feature));
-      marker.addTo(markerLayer);
-    }
-
-    function renderPolygonFeature(feature) {
-      const rings = feature.geometry.coordinates;
-
-      if (!Array.isArray(rings) || !Array.isArray(rings[0])) return;
-
-      const latLngs = rings[0].map(coord => [coord[1], coord[0]]);
-      const polygon = L.polygon(latLngs, getAreaStyle(feature));
-
-      polygon.bindPopup(createGeometryPopupHTML(feature));
-      polygon.addTo(drawingLayer);
-    }
-
-    function renderLineFeature(feature) {
-      const coords = feature.geometry.coordinates;
-      if (!Array.isArray(coords)) return;
-
-      const latLngs = coords.map(coord => [coord[1], coord[0]]);
-      const color = colorFromSpecies(feature.properties?.species || "Foraging route");
-
-      const line = L.polyline(latLngs, {
-        color,
-        weight: 5
-      });
-
-      line.bindPopup(createGeometryPopupHTML(feature));
-      line.addTo(drawingLayer);
-    }
-
-    function getAreaStyle(labelOrFeature, temporary = false) {
-      const feature =
-        typeof labelOrFeature === "object" && labelOrFeature !== null
-          ? labelOrFeature
-          : null;
-
-      const label = feature
-        ? feature.properties?.featureType || feature.properties?.name || "Area"
-        : labelOrFeature;
-
-      if (label === "Research area") {
-        return {
-          color: "#d7191c",
-          weight: temporary ? 3 : 4,
-          fill: false,
-          fillOpacity: 0,
-          dashArray: temporary ? "7,6" : null
-        };
-      }
-
-      const species = feature?.properties?.species || label || "Unknown";
-      const color = colorFromSpecies(species);
-
-      return {
-        color,
-        weight: temporary ? 3 : 3,
-        fillColor: color,
-        fillOpacity: temporary ? 0.18 : 0.24,
-        dashArray: temporary ? "7,6" : null
-      };
-    }
-
-    function createPointPopupHTML(feature) {
-      const props = feature.properties || {};
-      const id = escapeAttribute(props.id || "");
-
-      return `
-        <div class="popup-title">${escapeHTML(props.group || "Observation")}: ${escapeHTML(props.species || "Unknown species")}</div>
-        <div class="popup-line"><strong>Type:</strong> Point observation</div>
-        <div class="popup-line"><strong>Date:</strong> ${escapeHTML(props.date || "No date")}</div>
-        <div class="popup-line"><strong>Time:</strong> ${escapeHTML(props.time || "No time")}</div>
-        <div class="popup-line"><strong>Comments:</strong> ${escapeHTML(props.comments || "No comments")}</div>
-        <div class="popup-actions">
-          <button class="popup-edit" type="button" onclick="openEditObservation('${id}')">Edit</button>
-          <button class="popup-delete" type="button" onclick="deleteFeature('${id}')">Delete</button>
-        </div>
-      `;
-    }
-
-    function createGeometryPopupHTML(feature) {
-      const props = feature.properties || {};
-      const id = escapeAttribute(props.id || "");
-
-      const title = props.subtype || props.name || props.featureType || feature.geometry.type;
-
-      return `
-        <div class="popup-title">${escapeHTML(title)}</div>
-        <div class="popup-line"><strong>Feature type:</strong> ${escapeHTML(props.featureType || "Unknown")}</div>
-        <div class="popup-line"><strong>Geometry:</strong> ${escapeHTML(feature.geometry.type)}</div>
-        ${props.species ? `<div class="popup-line"><strong>Species:</strong> ${escapeHTML(props.species)}</div>` : ""}
-        ${props.date ? `<div class="popup-line"><strong>Date:</strong> ${escapeHTML(props.date)}</div>` : ""}
-        ${props.time ? `<div class="popup-line"><strong>Time:</strong> ${escapeHTML(props.time)}</div>` : ""}
-        ${props.comments ? `<div class="popup-line"><strong>Comments:</strong> ${escapeHTML(props.comments)}</div>` : ""}
-        <div class="popup-line"><strong>Created:</strong> ${escapeHTML(formatDateTime(props.createdAt))}</div>
-        <div class="popup-actions">
-          <button class="popup-delete" type="button" onclick="deleteFeature('${id}')">Delete</button>
-        </div>
-      `;
-    }
-
-    window.openEditObservation = function (id) {
-      const feature = findFeatureById(id);
-      if (!feature || !feature.properties || feature.geometry?.type !== "Point") return;
-
-      const props = feature.properties;
-
-      editFeatureId.value = id;
-      editGroup.value = props.group || "Bat";
-      populateSpeciesSelect(editSpecies, editGroup.value);
-
-      editSpecies.value = props.species || editSpecies.options[0]?.value || "";
-      editDate.value = props.date || "";
-      editTime.value = props.time || "";
-      editComments.value = props.comments || "";
-
-      safeShowDialog(editDialog);
-    };
-
-    async function saveEditedObservation(event) {
-      event.preventDefault();
-
-      const confirmed = confirm("Are you sure you want to edit this observation and update the GeoJSON file?");
-      if (!confirmed) return;
-
-      const feature = findFeatureById(editFeatureId.value);
-      if (!feature || !feature.properties) return;
-
-      feature.properties.group = editGroup.value;
-      feature.properties.species = editSpecies.value;
-      feature.properties.date = editDate.value;
-      feature.properties.time = editTime.value;
-      feature.properties.comments = editComments.value.trim();
-      feature.properties.updatedAt = new Date().toISOString();
-
-      editDialog.close();
-
-      await saveProjectToDisk();
-      renderAllFeatures();
-    }
-
-    window.deleteFeature = async function (id) {
-      const confirmed = confirm("Are you sure you want to delete this feature and update the GeoJSON file?");
-      if (!confirmed) return;
-
-      geojsonData.features = geojsonData.features.filter(feature => {
-        return feature.properties && feature.properties.id !== id;
-      });
-
-      await saveProjectToDisk();
-      renderAllFeatures();
-    };
-
-    function findFeatureById(id) {
-      return geojsonData.features.find(feature => {
-        return feature.properties && feature.properties.id === id;
-      });
-    }
-
-    function openProjectSummary() {
-      renderProjectSummary();
-      safeShowDialog(summaryDialog);
-    }
-
-    function renderProjectSummary() {
-      const features = geojsonData.features || [];
-
-      const points = features.filter(f => f.geometry?.type === "Point");
-      const researchAreas = features.filter(f => f.properties?.featureType === "Research area");
-      const observationAreas = features.filter(f => f.properties?.featureType === "Observation area");
-      const routes = features.filter(f => f.properties?.featureType === "Foraging route");
-
-      summaryStats.innerHTML = `
-        <div class="stat-card">
-          <strong>${features.length}</strong>
-          <span>Total GeoJSON features</span>
-        </div>
-        <div class="stat-card">
-          <strong>${points.length}</strong>
-          <span>Point observations</span>
-        </div>
-        <div class="stat-card">
-          <strong>${researchAreas.length}</strong>
-          <span>Research areas</span>
-        </div>
-        <div class="stat-card">
-          <strong>${observationAreas.length}</strong>
-          <span>Observation areas</span>
-        </div>
-        <div class="stat-card">
-          <strong>${routes.length}</strong>
-          <span>Foraging routes</span>
-        </div>
-      `;
-
-      renderBarChart(featureTypeChart, countBy(features, feature => {
-        return feature.properties?.featureType || feature.geometry?.type || "Unknown";
-      }));
-
-      renderBarChart(speciesChart, countBy(points, feature => {
-        return feature.properties?.species || "Unknown species";
-      }));
-
-      renderBarChart(geometrySpeciesChart, countBy([...observationAreas, ...routes], feature => {
-        return feature.properties?.species || "Unknown species";
-      }));
-    }
-
-    function countBy(items, getter) {
-      const counts = {};
-
-      items.forEach(item => {
-        const key = getter(item);
-        counts[key] = (counts[key] || 0) + 1;
-      });
-
-      return counts;
-    }
-
-    function renderBarChart(container, counts) {
-      const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-
-      if (!entries.length) {
-        container.innerHTML = `<div class="empty-chart">No data available yet.</div>`;
-        return;
-      }
-
-      const max = Math.max(...entries.map(entry => entry[1]));
-
-      container.innerHTML = entries.map(([label, value]) => {
-        const width = Math.max(4, Math.round((value / max) * 100));
-        const color = colorFromSpecies(label);
-
-        return `
-          <div class="chart-row">
-            <div class="chart-label" title="${escapeAttribute(label)}">${escapeHTML(label)}</div>
-            <div class="chart-track">
-              <div class="chart-bar" style="width:${width}%; background:${color};"></div>
-            </div>
-            <div class="chart-count">${value}</div>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function toggleSidebar() {
-      sidebar.classList.toggle("open");
-    }
-
-    function toggleFilters() {
-      filterPanel.classList.toggle("hidden");
-
-      const isVisible = !filterPanel.classList.contains("hidden");
-
-      toggleFiltersBtn.querySelector("span:first-child").textContent =
-        isVisible ? "Hide filters" : "Show filters";
-
-      toggleFiltersBtn.querySelector("span:last-child").textContent =
-        isVisible ? "▴" : "▾";
-    }
-
-    function showToast(message) {
-      toast.textContent = message;
-      toast.classList.add("show");
-
-      window.clearTimeout(showToast._timeout);
-      showToast._timeout = window.setTimeout(() => {
-        toast.classList.remove("show");
-      }, 2300);
-    }
-
-    function setNowDefaults() {
-      const now = new Date();
-
-      obsDate.value = toDateInputValue(now);
-      obsTime.value = toTimeInputValue(now);
-    }
-
-    function setGeometryNowDefaults() {
-      const now = new Date();
-
-      geometryDate.value = toDateInputValue(now);
-      geometryTime.value = toTimeInputValue(now);
-    }
-
-    function toDateInputValue(date) {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-
-      return `${year}-${month}-${day}`;
-    }
-
-    function toTimeInputValue(date) {
-      const hours = String(date.getHours()).padStart(2, "0");
-      const minutes = String(date.getMinutes()).padStart(2, "0");
-
-      return `${hours}:${minutes}`;
-    }
-
-    function populateSpeciesSelect(selectElement, group) {
-      const speciesList = speciesByGroup[group] || [];
-
-      selectElement.innerHTML = speciesList.map(species => {
-        return `<option value="${escapeAttribute(species)}">${escapeHTML(species)}</option>`;
-      }).join("");
-    }
-
-    function populateAllSpeciesSelect(selectElement) {
-      const allSpecies = [
-        ...speciesByGroup.Bat,
-        ...speciesByGroup.Bird
-      ];
-
-      selectElement.innerHTML = allSpecies.map(species => {
-        return `<option value="${escapeAttribute(species)}">${escapeHTML(species)}</option>`;
-      }).join("");
-    }
-
-    function fitToFeatures() {
-      const layers = [];
-
-      geojsonData.features.forEach(feature => {
-        if (!feature.geometry) return;
-
-        if (feature.geometry.type === "Point") {
-          const coords = feature.geometry.coordinates;
-
-          if (Array.isArray(coords) && coords.length >= 2) {
-            layers.push(L.marker([coords[1], coords[0]]));
-          }
-        }
-
-        if (feature.geometry.type === "Polygon") {
-          const rings = feature.geometry.coordinates;
-
-          if (Array.isArray(rings) && Array.isArray(rings[0])) {
-            const latLngs = rings[0].map(coord => [coord[1], coord[0]]);
-            layers.push(L.polygon(latLngs));
-          }
-        }
-
-        if (feature.geometry.type === "LineString") {
-          const coords = feature.geometry.coordinates;
-
-          if (Array.isArray(coords)) {
-            const latLngs = coords.map(coord => [coord[1], coord[0]]);
-            layers.push(L.polyline(latLngs));
-          }
-        }
-      });
-
-      if (!layers.length) return;
-
-      const group = L.featureGroup(layers);
-      map.fitBounds(group.getBounds(), {
-        padding: [35, 35],
-        maxZoom: 17
-      });
-    }
-
-    function colorFromSpecies(species) {
-      const palette = [
-        "#73508a",
-        "#2f738f",
-        "#c66e45",
-        "#6f9b78",
-        "#4059ad",
-        "#d7191c",
-        "#8d6b32",
-        "#1c6254",
-        "#984d31",
-        "#5a7d4f",
-        "#9b4f7a",
-        "#2d8f6f",
-        "#bf7d2f",
-        "#526a88"
-      ];
-
-      const text = String(species || "Unknown");
-      let hash = 0;
-
-      for (let i = 0; i < text.length; i++) {
-        hash = text.charCodeAt(i) + ((hash << 5) - hash);
-        hash = hash & hash;
-      }
-
-      return palette[Math.abs(hash) % palette.length];
-    }
-
-    function createId() {
-      if (window.crypto && crypto.randomUUID) {
-        return crypto.randomUUID();
-      }
-
-      return "feature-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10);
-    }
-
-    function escapeHTML(value) {
-      return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-    }
-
-    function escapeAttribute(value) {
-      return escapeHTML(value).replace(/`/g, "&#096;");
-    }
-
-    function formatDateTime(value) {
-      if (!value) return "Unknown";
-
-      const date = new Date(value);
-
-      if (Number.isNaN(date.getTime())) {
-        return String(value);
-      }
-
-      return date.toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
+    });
   </script>
 </body>
 </html>
