@@ -1945,6 +1945,11 @@
       captureHint.classList.add("hidden");
       observationFormPanel.classList.add("hidden");
 
+      if (observationFormMap) {
+        observationFormMap.remove();
+        observationFormMap = null;
+      }
+
       observationForm.reset();
       obsGroup.value = "Bat";
       populateSpeciesSelect(obsSpecies, "Bat");
